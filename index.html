@@ -402,6 +402,7 @@
   }
   .cv-download-btn.show{ display:block; animation:authFade 0.3s ease-in-out; }
   .cv-download-btn:hover{ background:var(--teal); }
+  .cv-error{ color:var(--danger); font-size:0.8rem; margin-top:8px; min-height:1.1em; text-align:center; }
 
   @media (max-width:780px){
     .sidebar{ width:84%; max-width:300px; }
@@ -584,13 +585,14 @@
         <h2 class="cv-title">CV TONIR SHAIK PDF</h2>
 
         <div class="cv-input-wrap">
-          <input type="password" id="cvPasswordField" placeholder="Enter password..." oninput="cvCheckPassword()">
+          <input type="password" id="cvPasswordField" placeholder="Enter password..." oninput="cvOnInput()" onkeydown="if(event.key==='Enter'){event.preventDefault(); cvSubmit();}">
           <i class="fa-solid fa-eye cv-toggle-eye" id="cvEyeIcon" onclick="cvToggleVisibility()"></i>
         </div>
 
-        <a href="#" target="_blank" rel="noopener" id="cvDownloadBtn" class="cv-download-btn">
+        <a href="#" id="cvDownloadBtn" class="cv-download-btn" onclick="cvSubmit(event)">
            Download
         </a>
+        <div class="cv-error" id="cvError"></div>
       </div>
     </div>
 
@@ -605,13 +607,14 @@
         <h2 class="cv-title">Diploma Certificate PDF</h2>
 
         <div class="cv-input-wrap">
-          <input type="password" id="diplomaPasswordField" placeholder="Enter password..." oninput="diplomaCheckPassword()">
+          <input type="password" id="diplomaPasswordField" placeholder="Enter password..." oninput="diplomaOnInput()" onkeydown="if(event.key==='Enter'){event.preventDefault(); diplomaSubmit();}">
           <i class="fa-solid fa-eye cv-toggle-eye" id="diplomaEyeIcon" onclick="diplomaToggleVisibility()"></i>
         </div>
 
-        <a href="#" target="_blank" rel="noopener" id="diplomaDownloadBtn" class="cv-download-btn">
+        <a href="#" id="diplomaDownloadBtn" class="cv-download-btn" onclick="diplomaSubmit(event)">
            Download
         </a>
+        <div class="cv-error" id="diplomaError"></div>
       </div>
     </div>
 
@@ -626,13 +629,14 @@
         <h2 class="cv-title">School certificate PDF</h2>
 
         <div class="cv-input-wrap">
-          <input type="password" id="schoolPasswordField" placeholder="Enter password..." oninput="schoolCheckPassword()">
+          <input type="password" id="schoolPasswordField" placeholder="Enter password..." oninput="schoolOnInput()" onkeydown="if(event.key==='Enter'){event.preventDefault(); schoolSubmit();}">
           <i class="fa-solid fa-eye cv-toggle-eye" id="schoolEyeIcon" onclick="schoolToggleVisibility()"></i>
         </div>
 
-        <a href="#" target="_blank" rel="noopener" id="schoolDownloadBtn" class="cv-download-btn">
+        <a href="#" id="schoolDownloadBtn" class="cv-download-btn" onclick="schoolSubmit(event)">
            Download
         </a>
+        <div class="cv-error" id="schoolError"></div>
       </div>
     </div>
 
@@ -647,13 +651,14 @@
         <h2 class="cv-title">Citizen Certificate PDF</h2>
 
         <div class="cv-input-wrap">
-          <input type="password" id="citizenPasswordField" placeholder="Enter password..." oninput="citizenCheckPassword()">
+          <input type="password" id="citizenPasswordField" placeholder="Enter password..." oninput="citizenOnInput()" onkeydown="if(event.key==='Enter'){event.preventDefault(); citizenSubmit();}">
           <i class="fa-solid fa-eye cv-toggle-eye" id="citizenEyeIcon" onclick="citizenToggleVisibility()"></i>
         </div>
 
-        <a href="#" target="_blank" rel="noopener" id="citizenDownloadBtn" class="cv-download-btn">
+        <a href="#" id="citizenDownloadBtn" class="cv-download-btn" onclick="citizenSubmit(event)">
            Download
         </a>
+        <div class="cv-error" id="citizenError"></div>
       </div>
     </div>
 
@@ -668,13 +673,14 @@
         <h2 class="cv-title">Passport PDF</h2>
 
         <div class="cv-input-wrap">
-          <input type="password" id="passportPasswordField" placeholder="Enter password..." oninput="passportCheckPassword()">
+          <input type="password" id="passportPasswordField" placeholder="Enter password..." oninput="passportOnInput()" onkeydown="if(event.key==='Enter'){event.preventDefault(); passportSubmit();}">
           <i class="fa-solid fa-eye cv-toggle-eye" id="passportEyeIcon" onclick="passportToggleVisibility()"></i>
         </div>
 
-        <a href="#" target="_blank" rel="noopener" id="passportDownloadBtn" class="cv-download-btn">
+        <a href="#" id="passportDownloadBtn" class="cv-download-btn" onclick="passportSubmit(event)">
            Download
         </a>
+        <div class="cv-error" id="passportError"></div>
       </div>
     </div>
 
@@ -689,13 +695,14 @@
         <h2 class="cv-title">ID Card PDF</h2>
 
         <div class="cv-input-wrap">
-          <input type="password" id="nidPasswordField" placeholder="Enter password..." oninput="nidCheckPassword()">
+          <input type="password" id="nidPasswordField" placeholder="Enter password..." oninput="nidOnInput()" onkeydown="if(event.key==='Enter'){event.preventDefault(); nidSubmit();}">
           <i class="fa-solid fa-eye cv-toggle-eye" id="nidEyeIcon" onclick="nidToggleVisibility()"></i>
         </div>
 
-        <a href="#" target="_blank" rel="noopener" id="nidDownloadBtn" class="cv-download-btn">
+        <a href="#" id="nidDownloadBtn" class="cv-download-btn" onclick="nidSubmit(event)">
            Download
         </a>
+        <div class="cv-error" id="nidError"></div>
       </div>
     </div>
 
@@ -774,29 +781,37 @@
        (CV, Diploma, School, Citizen, Passport, ID Card — all follow
        the same pattern, so we build one reusable function set) */
     function makeDocModule(prefix, category){
-      const passId    = prefix + 'PasswordField';
-      const eyeId     = prefix + 'EyeIcon';
-      const btnId     = prefix + 'DownloadBtn';
+      const passId = prefix + 'PasswordField';
+      const eyeId  = prefix + 'EyeIcon';
+      const btnId  = prefix + 'DownloadBtn';
+      const errId  = prefix + 'Error';
 
-      let debounceTimer = null;
-
-      async function checkPassword(){
-        clearTimeout(debounceTimer);
+      // Button appears as soon as the user starts typing (matches the
+      // Vault / Authenticator Submit button, which is always visible).
+      // Actual password verification happens on click / Enter, not on
+      // every keystroke.
+      function onInput(){
         const val = document.getElementById(passId).value;
         const btn = document.getElementById(btnId);
-        if(!val){ btn.classList.remove('show'); return; }
+        const err = document.getElementById(errId);
+        if(err) err.textContent = '';
+        if(val){ btn.classList.add('show'); }
+        else{ btn.classList.remove('show'); }
+      }
 
-        // Wait briefly instead of calling on every keystroke, then call once
-        debounceTimer = setTimeout(async () => {
-          try{
-            const token = await apiLogin(category, val);
-            const link = await apiGetDocument(category, token);
-            btn.href = link;
-            btn.classList.add('show');
-          }catch(err){
-            btn.classList.remove('show');
-          }
-        }, 400);
+      async function submit(e){
+        if(e) e.preventDefault();
+        const val = document.getElementById(passId).value;
+        const err = document.getElementById(errId);
+        if(!val) return;
+        try{
+          const token = await apiLogin(category, val);
+          const link = await apiGetDocument(category, token);
+          if(err) err.textContent = '';
+          window.open(link, '_blank', 'noopener');
+        }catch(_err){
+          if(err) err.textContent = 'Incorrect password';
+        }
       }
 
       function toggleVisibility(){
@@ -815,12 +830,14 @@
         const pf = document.getElementById(passId);
         const icon = document.getElementById(eyeId);
         const btn = document.getElementById(btnId);
+        const err = document.getElementById(errId);
         if(pf){ pf.value = ''; pf.type = 'password'; }
         if(icon){ icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye'); }
         if(btn){ btn.classList.remove('show'); btn.removeAttribute('href'); }
+        if(err){ err.textContent = ''; }
       }
 
-      return { checkPassword, toggleVisibility, resetLock };
+      return { onInput, submit, toggleVisibility, resetLock };
     }
 
     const cvModule       = makeDocModule('cv', 'cv');
@@ -830,27 +847,33 @@
     const passportModule = makeDocModule('passport', 'passport');
     const nidModule      = makeDocModule('nid', 'nid');
 
-    function cvCheckPassword(){ cvModule.checkPassword(); }
+    function cvOnInput(){ cvModule.onInput(); }
+    function cvSubmit(e){ cvModule.submit(e); }
     function cvToggleVisibility(){ cvModule.toggleVisibility(); }
     function cvResetLock(){ cvModule.resetLock(); }
 
-    function diplomaCheckPassword(){ diplomaModule.checkPassword(); }
+    function diplomaOnInput(){ diplomaModule.onInput(); }
+    function diplomaSubmit(e){ diplomaModule.submit(e); }
     function diplomaToggleVisibility(){ diplomaModule.toggleVisibility(); }
     function diplomaResetLock(){ diplomaModule.resetLock(); }
 
-    function schoolCheckPassword(){ schoolModule.checkPassword(); }
+    function schoolOnInput(){ schoolModule.onInput(); }
+    function schoolSubmit(e){ schoolModule.submit(e); }
     function schoolToggleVisibility(){ schoolModule.toggleVisibility(); }
     function schoolResetLock(){ schoolModule.resetLock(); }
 
-    function citizenCheckPassword(){ citizenModule.checkPassword(); }
+    function citizenOnInput(){ citizenModule.onInput(); }
+    function citizenSubmit(e){ citizenModule.submit(e); }
     function citizenToggleVisibility(){ citizenModule.toggleVisibility(); }
     function citizenResetLock(){ citizenModule.resetLock(); }
 
-    function passportCheckPassword(){ passportModule.checkPassword(); }
+    function passportOnInput(){ passportModule.onInput(); }
+    function passportSubmit(e){ passportModule.submit(e); }
     function passportToggleVisibility(){ passportModule.toggleVisibility(); }
     function passportResetLock(){ passportModule.resetLock(); }
 
-    function nidCheckPassword(){ nidModule.checkPassword(); }
+    function nidOnInput(){ nidModule.onInput(); }
+    function nidSubmit(e){ nidModule.submit(e); }
     function nidToggleVisibility(){ nidModule.toggleVisibility(); }
     function nidResetLock(){ nidModule.resetLock(); }
 
