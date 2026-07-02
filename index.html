@@ -782,18 +782,32 @@
 
     /* ---------------- Shared helper: log in to the Worker ---------------- */
     async function apiLogin(category, password){
-      const res = await fetch(`${API_BASE}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, password })
-      });
+      let res;
+      try{
+        res = await fetch(`${API_BASE}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category, password })
+        });
+      }catch(networkErr){
+        const e = new Error('Network error');
+        e.isNetworkError = true;
+        throw e;
+      }
       const data = await res.json();
       if(!res.ok) throw new Error(data.error || 'Login failed');
       return data.token; // temporary token
     }
 
     async function apiGetDocument(category, token){
-      const res = await fetch(`${API_BASE}/document?category=${encodeURIComponent(category)}&token=${encodeURIComponent(token)}`);
+      let res;
+      try{
+        res = await fetch(`${API_BASE}/document?category=${encodeURIComponent(category)}&token=${encodeURIComponent(token)}`);
+      }catch(networkErr){
+        const e = new Error('Network error');
+        e.isNetworkError = true;
+        throw e;
+      }
       const data = await res.json();
       if(!res.ok) throw new Error(data.error || 'Link not found');
       return data.link;
@@ -832,7 +846,11 @@
           if(err) err.textContent = '';
           window.open(link, '_blank', 'noopener');
         }catch(_err){
-          if(err) err.textContent = 'Incorrect password';
+          if(err){
+            err.textContent = _err.isNetworkError
+              ? 'নেটওয়ার্ক সমস্যা — সার্ভারে পৌঁছানো যাচ্ছে না (WiFi/DNS চেক করুন)'
+              : 'Incorrect password';
+          }
         }
       }
 
@@ -945,7 +963,9 @@
         errorEl.textContent = '';
         authShowMenu();
       }catch(err){
-        errorEl.textContent = 'Incorrect password';
+        errorEl.textContent = err.isNetworkError
+          ? 'নেটওয়ার্ক সমস্যা — সার্ভারে পৌঁছানো যাচ্ছে না (WiFi/DNS চেক করুন)'
+          : 'Incorrect password';
       }
     }
 
@@ -1053,7 +1073,9 @@
         document.getElementById('secMainMenu').classList.add('active');
         secStartTimer();
       }catch(err){
-        errorEl.textContent = 'Incorrect password';
+        errorEl.textContent = err.isNetworkError
+          ? 'নেটওয়ার্ক সমস্যা — সার্ভারে পৌঁছানো যাচ্ছে না (WiFi/DNS চেক করুন)'
+          : 'Incorrect password';
       }
     }
 
