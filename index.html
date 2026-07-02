@@ -822,10 +822,16 @@
       const btnId  = prefix + 'DownloadBtn';
       const errId  = prefix + 'Error';
 
+      let debounceTimer = null;
+      let cachedPass = null;   // password the cachedLink was verified against
+      let cachedLink = null;   // resolved document link for cachedPass
+      let inFlight   = false;  // a background verification is running
+
       // Button appears as soon as the user starts typing (matches the
       // Vault / Authenticator Submit button, which is always visible).
-      // Actual password verification happens on click / Enter, not on
-      // every keystroke.
+      // While typing, we also quietly verify in the background (debounced)
+      // so that by the time the user clicks, the link is often already
+      // ready and opens instantly instead of waiting on click.
       function onInput(){
         const val = document.getElementById(passId).value;
         const btn = document.getElementById(btnId);
@@ -833,16 +839,47 @@
         if(err) err.textContent = '';
         if(val){ btn.classList.add('show'); }
         else{ btn.classList.remove('show'); }
+
+        if(val !== cachedPass){ cachedLink = null; }
+
+        clearTimeout(debounceTimer);
+        if(!val) return;
+        debounceTimer = setTimeout(async () => {
+          try{
+            const token = await apiLogin(category, val);
+            const link = await apiGetDocument(category, token);
+            cachedPass = val;
+            cachedLink = link;
+          }catch(_e){
+            // Silent — the click handler will show the real error
+            // if the user actually submits with this password.
+          }
+        }, 400);
       }
 
       async function submit(e){
         if(e) e.preventDefault();
         const val = document.getElementById(passId).value;
         const err = document.getElementById(errId);
+        const btn = document.getElementById(btnId);
         if(!val) return;
+
+        // Already verified in the background while typing — open instantly.
+        if(cachedLink && cachedPass === val){
+          if(err) err.textContent = '';
+          window.open(cachedLink, '_blank', 'noopener');
+          return;
+        }
+
+        if(inFlight) return; // avoid double-submits while a check is running
+        inFlight = true;
+        const originalLabel = btn.textContent;
+        btn.textContent = 'Checking...';
         try{
           const token = await apiLogin(category, val);
           const link = await apiGetDocument(category, token);
+          cachedPass = val;
+          cachedLink = link;
           if(err) err.textContent = '';
           window.open(link, '_blank', 'noopener');
         }catch(_err){
@@ -851,6 +888,9 @@
               ? 'নেটওয়ার্ক সমস্যা — সার্ভারে পৌঁছানো যাচ্ছে না (WiFi/DNS চেক করুন)'
               : 'Incorrect password';
           }
+        }finally{
+          btn.textContent = originalLabel;
+          inFlight = false;
         }
       }
 
@@ -871,6 +911,9 @@
         const icon = document.getElementById(eyeId);
         const btn = document.getElementById(btnId);
         const err = document.getElementById(errId);
+        cachedPass = null;
+        cachedLink = null;
+        clearTimeout(debounceTimer);
         if(pf){ pf.value = ''; pf.type = 'password'; }
         if(icon){ icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye'); }
         if(btn){ btn.classList.remove('show'); btn.removeAttribute('href'); }
@@ -957,7 +1000,11 @@
     async function authTryUnlock(){
       const val = document.getElementById('authMasterPass').value;
       const errorEl = document.getElementById('authLockError');
+      const btn = document.getElementById('authSubmitBtn');
       if(!val) return;
+      const originalLabel = btn.textContent;
+      btn.textContent = 'Checking...';
+      btn.disabled = true;
       try{
         authToken = await apiLogin('totp', val);
         errorEl.textContent = '';
@@ -966,6 +1013,9 @@
         errorEl.textContent = err.isNetworkError
           ? 'নেটওয়ার্ক সমস্যা — সার্ভারে পৌঁছানো যাচ্ছে না (WiFi/DNS চেক করুন)'
           : 'Incorrect password';
+      }finally{
+        btn.textContent = originalLabel;
+        btn.disabled = false;
       }
     }
 
@@ -1065,7 +1115,11 @@
     async function secTryLogin(){
       const val = document.getElementById('secPasswordField').value;
       const errorEl = document.getElementById('secLockError');
+      const btn = document.getElementById('secSubmitBtn');
       if(!val) return;
+      const originalLabel = btn.textContent;
+      btn.textContent = 'Checking...';
+      btn.disabled = true;
       try{
         secToken = await apiLogin('security', val);
         errorEl.textContent = '';
@@ -1076,6 +1130,9 @@
         errorEl.textContent = err.isNetworkError
           ? 'নেটওয়ার্ক সমস্যা — সার্ভারে পৌঁছানো যাচ্ছে না (WiFi/DNS চেক করুন)'
           : 'Incorrect password';
+      }finally{
+        btn.textContent = originalLabel;
+        btn.disabled = false;
       }
     }
 
