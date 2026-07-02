@@ -264,7 +264,7 @@
   .sec-btn:hover{ background:var(--teal); color:#fff; transform:translateY(-2px); }
 
   .sec-submit-btn{
-    display:none; background:var(--ink); color:var(--paper);
+    display:flex; background:var(--ink); color:var(--paper);
     border-radius:50px; justify-content:center; border-left:none;
   }
   .sec-submit-btn:hover{ background:var(--teal); }
@@ -310,7 +310,7 @@
   .auth-submit{
     width:100%; padding:14px; background:var(--ink); color:var(--paper);
     border:none; border-radius:12px; cursor:pointer; font-size:0.98rem;
-    font-weight:600; display:none;
+    font-weight:600; display:block; margin-top:6px;
   }
   .auth-submit:hover{ background:var(--teal); }
   .auth-error{ color:var(--danger); font-size:0.82rem; text-align:center; margin-top:10px; min-height:1.1em; }
@@ -509,9 +509,10 @@
           <div class="sec-icon">🔐</div>
           <h2 class="sec-title">Vault</h2>
           <div class="sec-input-wrap">
-            <input type="password" id="secPasswordField" placeholder="Enter password..." oninput="secCheckPassword()">
+            <input type="password" id="secPasswordField" placeholder="Enter password..." oninput="secClearError()" onkeydown="if(event.key==='Enter') secTryLogin()">
             <i class="fas fa-eye sec-toggle-eye" id="secEyeIcon" onclick="secToggleVisibility()"></i>
           </div>
+          <button id="secSubmitBtn" class="sec-btn sec-submit-btn" onclick="secTryLogin()">Submit</button>
           <div class="sec-error" id="secLockError"></div>
         </div>
 
@@ -545,9 +546,10 @@
 
         <div id="authLockScreen" class="auth-screen active">
           <div class="auth-pass-wrap">
-            <input type="password" id="authMasterPass" placeholder="Enter password..." oninput="authValidatePass()">
+            <input type="password" id="authMasterPass" placeholder="Enter password..." oninput="authClearError()" onkeydown="if(event.key==='Enter') authTryUnlock()">
             <span class="auth-toggle-eye" id="authEyeIcon" onclick="authTogglePass()"><i class="fa-solid fa-eye"></i></span>
           </div>
+          <button id="authSubmitBtn" class="auth-submit" onclick="authTryUnlock()">Submit</button>
           <div class="auth-error" id="authLockError"></div>
         </div>
 
@@ -857,12 +859,9 @@
     let authActiveGroup = null;
     let authTimerStarted = false;
 
-    let authDebounceTimer = null;
-
     function resetAuthLock(){
       authToken = null;
       authActiveGroup = null;
-      clearTimeout(authDebounceTimer);
       const passInput = document.getElementById('authMasterPass');
       const errorEl = document.getElementById('authLockError');
       if(passInput){ passInput.value = ''; passInput.type = 'password'; }
@@ -885,19 +884,17 @@
       }
     }
 
-    // Only reaches the menu once the correct password is verified with the
-    // server - no button appears just from typing.
-    function authValidatePass(){
-      clearTimeout(authDebounceTimer);
-      const val = document.getElementById('authMasterPass').value;
+    // The password is only checked when the user presses Submit or Enter -
+    // never mid-typing - so a still-incomplete password can never flash
+    // "Incorrect password" by mistake.
+    function authClearError(){
       document.getElementById('authLockError').textContent = '';
-      if(!val) return;
-      authDebounceTimer = setTimeout(authTryUnlock, 500);
     }
 
     async function authTryUnlock(){
       const val = document.getElementById('authMasterPass').value;
       const errorEl = document.getElementById('authLockError');
+      if(!val) return;
       try{
         authToken = await apiLogin('totp', val);
         errorEl.textContent = '';
@@ -980,7 +977,6 @@
     let secToken = null;
     let secTimer;
     let secTimeLeft = 30;
-    let secDebounceTimer = null;
 
     function secToggleVisibility(){
       const pf = document.getElementById('secPasswordField');
@@ -994,19 +990,17 @@
       }
     }
 
-    // Only unlocks the dashboard once the correct password is verified with
-    // the server - nothing appears just from typing.
-    function secCheckPassword(){
-      clearTimeout(secDebounceTimer);
-      const val = document.getElementById('secPasswordField').value;
+    // The password is only checked when the user presses Submit or Enter -
+    // never mid-typing - so a still-incomplete password can never flash
+    // "Incorrect password" by mistake.
+    function secClearError(){
       document.getElementById('secLockError').textContent = '';
-      if(!val) return;
-      secDebounceTimer = setTimeout(secTryLogin, 500);
     }
 
     async function secTryLogin(){
       const val = document.getElementById('secPasswordField').value;
       const errorEl = document.getElementById('secLockError');
+      if(!val) return;
       try{
         secToken = await apiLogin('security', val);
         errorEl.textContent = '';
