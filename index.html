@@ -742,6 +742,17 @@
         el.classList.toggle('active', el.dataset.view === name && el.tagName === 'A');
       });
     }
+    const viewPasswordField = {
+      totp: 'authMasterPass',
+      security: 'secPasswordField',
+      cv: 'cvPasswordField',
+      diploma: 'diplomaPasswordField',
+      school: 'schoolPasswordField',
+      citizen: 'citizenPasswordField',
+      passport: 'passportPasswordField',
+      nid: 'nidPasswordField'
+    };
+
     document.querySelectorAll('[data-view]').forEach(el => {
       el.addEventListener('click', (e) => {
         e.preventDefault();
@@ -755,6 +766,17 @@
         if(el.dataset.view === 'nid'){ nidResetLock(); }
         showView(el.dataset.view);
         setOpen(false);
+
+        // Auto-focus the password field so typing can start immediately,
+        // no extra click needed. Enter already submits (see each field's
+        // onkeydown handler).
+        const fieldId = viewPasswordField[el.dataset.view];
+        if(fieldId){
+          requestAnimationFrame(() => {
+            const field = document.getElementById(fieldId);
+            if(field) field.focus();
+          });
+        }
       });
     });
 
