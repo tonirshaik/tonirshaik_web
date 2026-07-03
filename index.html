@@ -88,6 +88,27 @@
   body.sidebar-open .menu-toggle span:nth-child(2){opacity:0;}
   body.sidebar-open .menu-toggle span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
 
+  .gallery-btn{
+    position:fixed;
+    top:22px;
+    right:22px;
+    z-index:1100;
+    background:var(--ink);
+    color:var(--paper);
+    font-size:0.82rem;
+    font-weight:600;
+    padding:12px 20px;
+    border-radius:30px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.18);
+    border:1px solid var(--gold);
+    transition:background 0.15s ease, transform 0.15s ease;
+    white-space:nowrap;
+  }
+  .gallery-btn:hover{ background:var(--teal); transform:translateY(-2px); }
+  @media (max-width:780px){
+    .gallery-btn{ top:16px; right:16px; padding:9px 14px; font-size:0.72rem; }
+  }
+
   .overlay{
     position:fixed;
     inset:0;
@@ -426,6 +447,8 @@
   <button class="menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false">
     <span></span><span></span><span></span>
   </button>
+
+  <a class="gallery-btn" href="https://tonirshaik.github.io/tonirshaik/" target="_blank" rel="noopener noreferrer">Tonir Shaik Gallery</a>
 
   <div class="overlay" id="overlay"></div>
 
