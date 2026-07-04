@@ -421,7 +421,7 @@
     letter-spacing:0.12em; font-family:var(--mono);
   }
   .auth-progress-bar{ height:5px; background:var(--border); border-radius:10px; margin-top:10px; overflow:hidden; }
-  .auth-progress-fill{ height:100%; background:linear-gradient(90deg,var(--gold),var(--cyan)); width:0%; transition:width 1s linear; }
+  .auth-progress-fill{ height:100%; background:linear-gradient(90deg,var(--gold),var(--cyan)); width:0%; transition:width 0.1s linear; }
 
   .auth-copy-alert{
     position:fixed; top:20px; left:50%; transform:translateX(-50%);
@@ -1060,10 +1060,18 @@
     let authToken = null;
     let authActiveGroup = null;
     let authTimerStarted = false;
+    let authLastRenderedData = null; // tracks which fetch's data is currently in the DOM
+    let authProgressEls = {};        // account name -> its progress-fill element
+    let authProgressTimer = null;    // smooth 100ms countdown ticker
 
     function resetAuthLock(){
       authToken = null;
       authActiveGroup = null;
+      authPrefetchCache = {};
+      authPrefetchPromises = {};
+      authLastRenderedData = null;
+      authProgressEls = {};
+      if(authProgressTimer){ clearInterval(authProgressTimer); authProgressTimer = null; }
       const passInput = document.getElementById('authMasterPass');
       const errorEl = document.getElementById('authLockError');
       if(passInput){ passInput.value = ''; passInput.type = 'password'; }
@@ -1107,6 +1115,7 @@
         authToken = await apiLogin('totp', val);
         errorEl.textContent = '';
         authShowMenu();
+        authPrefetchAll(); // warm up every account's codes in the background
       }catch(err){
         errorEl.textContent = describeAuthError(err, 'login');
       }finally{
@@ -1129,17 +1138,59 @@
       document.getElementById('authMenuScreen').classList.add('active');
     }
 
+    /* ---- Prefetch: warm every account's codes right after unlock, so
+       opening a category is instant with no loading flash. ---- */
+    const AUTH_GROUPS = ['Gmail','Facebook','Instagram','TikTok','Mega','linkedin','Telegram','WhatsApp'];
+    let authPrefetchCache = {};   // group -> { data, fetchedAt }
+    let authPrefetchPromises = {}; // group -> in-flight promise (avoids duplicate fetches)
+
+    function authFetchGroup(group){
+      if(authPrefetchPromises[group]) return authPrefetchPromises[group];
+      const p = (async () => {
+        const res = await fetch(`${API_BASE}/totp?group=${encodeURIComponent(group)}&token=${encodeURIComponent(authToken)}`);
+        const data = await res.json();
+        if(!res.ok) throw new Error('fetch failed');
+        const entry = { data, fetchedAt: Date.now(), group };
+        authPrefetchCache[group] = entry;
+        return entry;
+      })();
+      authPrefetchPromises[group] = p;
+      p.finally(() => { delete authPrefetchPromises[group]; });
+      return p;
+    }
+
+    function authPrefetchAll(){
+      authPrefetchCache = {};
+      AUTH_GROUPS.forEach(g => authFetchGroup(g).catch(() => { /* will retry when opened */ }));
+    }
+
     async function authOpenCategory(group){
       if(!authToken) return;
       authActiveGroup = group;
       document.getElementById('authMainTitle').textContent = group + " Code";
       const container = document.getElementById('authCodeContainer');
-      container.innerHTML = "<p style='text-align:center;color:var(--slate);'>Loading...</p>";
+      container.innerHTML = "";
 
       document.getElementById('authMenuScreen').classList.remove('active');
       document.getElementById('authListScreen').classList.add('active');
 
-      await authRefreshCodes();
+      let entry = authPrefetchCache[group];
+      if(!entry){
+        // Not warmed up yet (e.g. very first tap right after unlock) - fetch
+        // it now. No "Loading..." label is shown; the codes simply appear
+        // the instant the response lands.
+        try{
+          entry = await authFetchGroup(group);
+        }catch(e){
+          container.innerHTML = "<p style='text-align:center;color:var(--slate);'>Couldn't load codes — try again.</p>";
+          return;
+        }
+        if(authActiveGroup !== group) return; // user navigated away while waiting
+      }
+
+      authLastFetch = entry.fetchedAt;
+      authRefreshCodes._cache = entry;
+      renderCodes(entry, Date.now());
 
       if(!authTimerStarted){
         authTimerStarted = true;
@@ -1150,39 +1201,73 @@
     let authLastFetch = 0;
     async function authRefreshCodes(){
       if(!authToken || !authActiveGroup) return;
+      const requestedGroup = authActiveGroup;
+
       // Fetch fresh codes from the server every 3 seconds, not every second
-      // (the remaining time is calculated locally for the progress bar)
+      // (the remaining time is calculated locally for the progress bar).
+      // The cache is only reusable when it belongs to the group that's
+      // currently open — otherwise switching accounts (e.g. Gmail -> Facebook)
+      // inside that 3s window would show the previous group's codes.
       const now = Date.now();
-      if(now - authLastFetch < 3000 && authRefreshCodes._cache){
-        renderCodes(authRefreshCodes._cache, now);
+      const cache = authRefreshCodes._cache;
+      if(now - authLastFetch < 3000 && cache && cache.group === requestedGroup){
+        renderCodes(cache, now);
         return;
       }
       try{
-        const res = await fetch(`${API_BASE}/totp?group=${encodeURIComponent(authActiveGroup)}&token=${encodeURIComponent(authToken)}`);
-        const data = await res.json();
-        if(!res.ok) return;
-        authLastFetch = Date.now();
-        authRefreshCodes._cache = { data, fetchedAt: authLastFetch };
-        renderCodes(authRefreshCodes._cache, authLastFetch);
+        const entry = await authFetchGroup(requestedGroup);
+        // If the user switched to a different account while this request was
+        // still in flight, discard the response instead of caching/rendering
+        // it under the now-active (different) group.
+        if(authActiveGroup !== requestedGroup) return;
+        authLastFetch = entry.fetchedAt;
+        authRefreshCodes._cache = entry;
+        renderCodes(entry, authLastFetch);
       }catch(e){ /* network glitch, will retry on the next tick */ }
     }
 
     function renderCodes(cacheObj, now){
       const container = document.getElementById('authCodeContainer');
       const { data, fetchedAt } = cacheObj;
-      const elapsedSec = Math.floor((now - fetchedAt) / 1000);
 
-      container.innerHTML = "";
-      data.accounts.forEach((acc, i) => {
-        const remaining = Math.max(acc.secondsRemaining - elapsedSec, 0);
-        const pct = (remaining / 30) * 100;
-        container.innerHTML += `
-          <div class="auth-account-box" onclick="authCopyText('${acc.code}')">
+      // Only rebuild the account boxes when the underlying data actually
+      // changed (a real fetch) — not on every visual tick. Rebuilding the
+      // DOM every second was why the bar looked like it jumped in steps
+      // instead of gliding down smoothly.
+      if(data !== authLastRenderedData){
+        authLastRenderedData = data;
+        authProgressEls = {};
+        container.innerHTML = "";
+        data.accounts.forEach((acc) => {
+          const box = document.createElement('div');
+          box.className = 'auth-account-box';
+          box.onclick = () => authCopyText(acc.code);
+          box.innerHTML = `
             <span class="auth-account-name">${acc.name}</span>
             <div class="auth-otp-code">${acc.code}</div>
-            <div class="auth-progress-bar"><div class="auth-progress-fill" style="width:${pct}%"></div></div>
-          </div>`;
+            <div class="auth-progress-bar"><div class="auth-progress-fill"></div></div>`;
+          container.appendChild(box);
+          authProgressEls[acc.name] = box.querySelector('.auth-progress-fill');
+        });
+      }
+
+      // Smoothly update just the bar width, many times a second, using the
+      // precise (fractional) elapsed time rather than a once-a-second jump.
+      const elapsedSec = (now - fetchedAt) / 1000;
+      data.accounts.forEach((acc) => {
+        const fillEl = authProgressEls[acc.name];
+        if(!fillEl) return;
+        const remaining = Math.max(acc.secondsRemaining - elapsedSec, 0);
+        const pct = (remaining / 30) * 100;
+        fillEl.style.width = pct + '%';
       });
+
+      if(!authProgressTimer){
+        authProgressTimer = setInterval(() => {
+          const c = authRefreshCodes._cache;
+          if(c) renderCodes(c, Date.now());
+        }, 100); // 10x/sec keeps the countdown gliding instead of stepping
+      }
     }
 
     /* ---------------- Vault module ---------------- */
