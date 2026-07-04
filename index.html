@@ -921,15 +921,19 @@
     }
 
     /* Turns a failed apiLogin/apiGetDocument error into the right message
-       to show the user — network problem, rate-limited, or wrong password.
-       (Previously every non-network error was shown as "Incorrect password",
-       which hid real causes like a 429 rate-limit response.) */
-    function describeAuthError(err){
+       to show the user — network problem, rate-limited, wrong password,
+       or (for the document step) a missing/misconfigured link on the
+       server. "stage" tells us which call actually failed, since a 404
+       from /document is NOT a wrong password. */
+    function describeAuthError(err, stage){
       if(err.isNetworkError){
         return 'নেটওয়ার্ক সমস্যা — সার্ভারে পৌঁছানো যাচ্ছে না (WiFi/DNS চেক করুন)';
       }
       if(err.status === 429){
         return err.serverMessage || 'অনেকবার চেষ্টা হয়েছে, একটু পর আবার চেষ্টা করুন।';
+      }
+      if(stage === 'document'){
+        return (err.serverMessage || 'লিংক পাওয়া যায়নি') + ' — Worker-এ এই ডকুমেন্টের LINK ভ্যারিয়েবল সেট করা আছে কিনা চেক করুন।';
       }
       return 'Incorrect password';
     }
@@ -966,14 +970,22 @@
         inFlight = true;
         const originalLabel = btn.textContent;
         btn.textContent = 'Checking...';
+        let token;
         try{
-          const token = await apiLogin(category, val);
+          token = await apiLogin(category, val);
+        }catch(_err){
+          if(err) err.textContent = describeAuthError(_err, 'login');
+          btn.textContent = originalLabel;
+          inFlight = false;
+          return;
+        }
+        try{
           const link = await apiGetDocument(category, token);
           if(err) err.textContent = '';
           window.open(link, '_blank', 'noopener');
         }catch(_err){
           if(err){
-            err.textContent = describeAuthError(_err);
+            err.textContent = describeAuthError(_err, 'document');
           }
         }finally{
           btn.textContent = originalLabel;
@@ -1096,7 +1108,7 @@
         errorEl.textContent = '';
         authShowMenu();
       }catch(err){
-        errorEl.textContent = describeAuthError(err);
+        errorEl.textContent = describeAuthError(err, 'login');
       }finally{
         btn.textContent = originalLabel;
         btn.disabled = false;
@@ -1211,7 +1223,7 @@
         document.getElementById('secAuthScreen').classList.remove('active');
         document.getElementById('secMainMenu').classList.add('active');
       }catch(err){
-        errorEl.textContent = describeAuthError(err);
+        errorEl.textContent = describeAuthError(err, 'login');
       }finally{
         btn.textContent = originalLabel;
         btn.disabled = false;
