@@ -1170,6 +1170,13 @@
       document.getElementById('authMainTitle').textContent = group + " Code";
       const container = document.getElementById('authCodeContainer');
       container.innerHTML = "";
+      // We just wiped the container above, so force renderCodes to rebuild
+      // the boxes from scratch even if the underlying data object hasn't
+      // changed (e.g. re-entering the same account within a few seconds) -
+      // otherwise renderCodes sees "same data as before" and skips rebuilding,
+      // leaving the screen blank.
+      authLastRenderedData = null;
+      authProgressEls = {};
 
       document.getElementById('authMenuScreen').classList.remove('active');
       document.getElementById('authListScreen').classList.add('active');
