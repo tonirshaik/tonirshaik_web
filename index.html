@@ -114,50 +114,6 @@
     *,*::before,*::after{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; }
   }
 
-  /* ---------------- Loading screen ---------------- */
-  #loadScreen{
-    position:fixed; inset:0; z-index:9999; background:var(--bg);
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
-    transition:opacity 0.6s var(--ease), visibility 0.6s var(--ease);
-  }
-  #loadScreen.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
-  .load-mark{
-    font-family:'Fraunces',serif; font-weight:600; font-size:1.4rem; letter-spacing:0.02em;
-    color:var(--text); display:flex; align-items:center; gap:10px;
-  }
-  .load-mark .dot{
-    width:8px; height:8px; border-radius:50%;
-    background:linear-gradient(135deg,var(--gold),var(--cyan));
-    box-shadow:0 0 14px rgba(207,169,104,0.6);
-  }
-  .load-ring{
-    position:relative; width:92px; height:92px; display:grid; place-items:center;
-    margin-bottom:6px;
-  }
-  .load-ring span{
-    position:absolute; inset:0; border-radius:50%;
-    border:2px solid transparent;
-    border-top-color:var(--gold);
-    border-right-color:var(--cyan);
-    animation:spinLoad 1.2s linear infinite;
-  }
-  .load-ring span:nth-child(2){
-    inset:14px; border-top-color:var(--cyan); border-right-color:var(--gold);
-    animation-direction:reverse; animation-duration:1.4s; opacity:0.72;
-  }
-  .load-bar{ width:220px; height:3px; background:rgba(255,255,255,0.08); border-radius:999px; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.03); }
-  .load-bar-fill{
-    height:100%; width:30%; border-radius:999px;
-    background:linear-gradient(90deg,var(--gold),var(--cyan));
-    box-shadow:0 0 18px rgba(207,169,104,0.35);
-    animation:loadSlide 1.1s ease-in-out infinite;
-  }
-  @keyframes loadSlide{
-    0%{ transform:translateX(-120%); }
-    100%{ transform:translateX(420%); }
-  }
-  @keyframes spinLoad{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
-
   /* ---------------- Scroll progress + back to top ---------------- */
   #scrollProgress{
     position:fixed; top:0; left:0; height:2px; width:0%;
@@ -820,12 +776,6 @@
 </style>
 </head>
 <body>
-
-  <div id="loadScreen">
-    <div class="load-ring" aria-hidden="true"><span></span><span></span></div>
-    <div class="load-mark"><span class="dot"></span>Tonir Shaik</div>
-    <div class="load-bar"><div class="load-bar-fill"></div></div>
-  </div>
 
   <div class="bg-mesh"></div>
   <div class="bg-orb bg-orb-1"></div>
@@ -1903,27 +1853,10 @@
       document.getElementById('secLockError').textContent = '';
     }
 
-    /* ---------------- Presentation layer: loading screen, scroll progress,
+    /* ---------------- Presentation layer: scroll progress,
        back-to-top, scroll reveal. Purely visual - does not touch any
        existing state, tokens, or API calls above. ---------------- */
     (function(){
-      // Loading screen: fade out once the page (and its assets) are ready.
-      // A minimum-visible-time guard avoids an ugly instant flash on fast
-      // connections while still never blocking longer than necessary.
-      const loadScreen = document.getElementById('loadScreen');
-      if(loadScreen){
-        const minVisible = 500;
-        const start = Date.now();
-        const hide = () => {
-          const wait = Math.max(0, minVisible - (Date.now() - start));
-          setTimeout(() => loadScreen.classList.add('hidden'), wait);
-        };
-        if(document.readyState === 'complete'){ hide(); }
-        else{ window.addEventListener('load', hide); }
-        // Safety net so the loading screen never gets stuck.
-        setTimeout(hide, 4000);
-      }
-
       // Scroll progress bar + back-to-top button. The page itself scrolls
       // (the sidebar is fixed-height, main is a normal flow element), so
       // we track scroll on the window/document, not on main.
