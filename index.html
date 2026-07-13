@@ -32,7 +32,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/fontawesome.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/solid.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/brands.min.css">
 <style>
   :root{
     --bg:#0A0D13;
@@ -69,7 +71,7 @@
   a{color:inherit;text-decoration:none;}
   :focus-visible{ outline:2px solid var(--gold); outline-offset:3px; border-radius:4px; }
 
-  /* ---------------- Ambient background: mesh glow + drifting orbs + grain ---------------- */
+  
   .bg-mesh{
     position:fixed; inset:0; z-index:-2; pointer-events:none;
     background:
@@ -114,7 +116,7 @@
     *,*::before,*::after{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; }
   }
 
-  /* ---------------- Scroll progress + back to top ---------------- */
+  
   #scrollProgress{
     position:fixed; top:0; left:0; height:2px; width:0%;
     background:linear-gradient(90deg,var(--gold),var(--cyan));
@@ -131,7 +133,7 @@
   #backToTop.show{ opacity:1; visibility:visible; transform:translateY(0); }
   #backToTop:hover{ border-color:var(--gold); color:var(--gold); }
 
-  /* ---------------- Scroll reveal ---------------- */
+  
   .reveal{
     opacity:0;
     transform:translateY(24px) scale(0.985);
@@ -141,7 +143,7 @@
   }
   .reveal.in-view{ opacity:1; transform:translateY(0) scale(1); filter:blur(0); }
 
-  /* Menu toggle icon */
+  
   .menu-toggle{
     position:fixed;
     top:22px;
@@ -207,7 +209,7 @@
   }
   body.sidebar-open .overlay{ opacity:1; visibility:visible; }
 
-  /* Sidebar */
+  
   .sidebar{
     width:280px;
     flex-shrink:0;
@@ -249,11 +251,6 @@
     pointer-events:none; z-index:0; opacity:0;
   }
   .nav-indicator.ready{ opacity:1; }
-  .nav-eyebrow{
-    font-family:var(--mono);
-    font-size:0.68rem; letter-spacing:0.12em; text-transform:uppercase;
-    color:var(--text-faint); margin:18px 0 10px;
-  }
   nav a{
     padding:10px 12px; border-radius:8px; font-size:0.92rem; color:var(--text-dim);
     border-left:2px solid transparent; position:relative; z-index:1;
@@ -282,7 +279,7 @@
   .sidebar-footer a:hover{ background:var(--cyan-soft); border-color:var(--cyan); color:var(--text); transform:translateY(-3px); box-shadow:0 6px 16px rgba(95,216,207,0.2); }
   .sidebar-footer a i{ font-size:0.95rem; }
 
-  /* Main content */
+  
   main{
     flex:1;
     width:100%;
@@ -290,8 +287,6 @@
     max-width:1040px;
     margin:0 auto;
   }
-  .hero{ position:relative; border-bottom:1px solid var(--border); padding-bottom:52px; margin-bottom:56px; display:flex; align-items:flex-start; justify-content:space-between; gap:40px; }
-  .hero-text{ flex:1; min-width:0; }
   .hero-photo{
     flex-shrink:0;
     width:180px;
@@ -380,7 +375,6 @@
     flex:0 0 auto;
     min-width:fit-content;
   }
-  .hero-badge i{ color:var(--gold); font-size:0.78rem; flex-shrink:0; }
   .hero-badge i{ color:var(--gold); font-size:0.8rem; }
   .hero-typing{
     margin:0 0 16px;
@@ -417,14 +411,14 @@
   .contact-line a{ color:var(--gold); font-weight:500; border-bottom:1px solid transparent; transition:border-color 0.2s ease; }
   .contact-line a:hover{ border-color:var(--gold); }
 
-  /* ---------------- Hero CTAs + inline social row ---------------- */
+  
   .hero-actions{ display:flex; align-items:center; gap:12px; margin-top:28px; flex-wrap:wrap; }
   .btn-primary, .btn-secondary{
     display:inline-flex; align-items:center; gap:9px; padding:13px 24px; border-radius:50px;
     font-size:0.9rem; font-weight:600; cursor:pointer; position:relative; overflow:hidden;
     transition:transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s var(--ease), opacity 0.25s var(--ease), background 0.25s var(--ease), color 0.25s var(--ease);
   }
-  .btn-primary:hover, .btn-secondary:hover, .sec-btn:hover, .auth-submit:hover, .cv-download-btn:hover, .back-link:hover, .gallery-btn:hover, .menu-toggle:hover, .sidebar-footer a:hover, .hero-social a:hover, .doc-card:hover, .auth-cat-btn:hover, .auth-account-box:hover, nav a:hover{
+  .btn-primary:hover, .btn-secondary:hover, .sec-btn:hover, .auth-submit:hover, .cv-download-btn:hover, .back-link:hover, .gallery-btn:hover, .menu-toggle:hover, .sidebar-footer a:hover, .hero-social a:hover, .auth-cat-btn:hover, .auth-account-box:hover, nav a:hover{
     transform:translateY(-3px) scale(1.01);
   }
   .btn-primary{
@@ -451,25 +445,6 @@
     background:linear-gradient(180deg,var(--gold),var(--cyan));
   }
   section p{ color:var(--text-dim); line-height:1.85; max-width:640px; }
-
-  .doc-grid{
-    display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
-    gap:14px; margin-top:18px;
-  }
-  .doc-card{
-    background:var(--surface); backdrop-filter:blur(16px);
-    border:1px solid var(--border); border-radius:var(--radius);
-    padding:18px 20px; display:flex; flex-direction:column; gap:6px;
-    transition:border-color 0.25s var(--ease), transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
-  }
-  .doc-card:hover{ border-color:var(--gold); transform:translateY(-3px); box-shadow:0 14px 34px rgba(207,169,104,0.15); }
-  .doc-card .tag{
-    font-family:var(--mono);
-    font-size:0.66rem; letter-spacing:0.08em; text-transform:uppercase;
-    color:var(--gold); font-weight:600;
-  }
-  .doc-card .name{ font-weight:600; font-size:0.98rem; color:var(--text); }
-  .doc-card .desc{ font-size:0.82rem; color:var(--text-dim); }
 
   .about-story a{
     color:var(--cyan); font-weight:600; border-bottom:1px solid var(--gold);
@@ -507,7 +482,7 @@
   .footer-bottom .to-top{ color:var(--text-dim); cursor:pointer; transition:color 0.2s var(--ease); }
   .footer-bottom .to-top:hover{ color:var(--gold); }
 
-  /* View switching */
+  
   .view{ display:none; }
   .view.active{ display:block; }
   .view-embed{ flex-direction:column; height:100vh; }
@@ -530,7 +505,7 @@
   }
   .embed-frame-wrap iframe{ width:100%; height:100%; border:0; display:block; }
 
-  /* ---------------- All Security Key view ---------------- */
+  
   .sec-wrap{
     max-width:380px;
     margin:24px auto 0;
@@ -589,7 +564,7 @@
   .sec-screen.active{ display:block; animation:authFade 0.3s ease-in-out; }
   .sec-error{ color:var(--danger); font-size:0.8rem; margin-top:8px; min-height:1.1em; }
 
-  /* ---------------- 2FA / Authenticator view ---------------- */
+  
   .auth-wrap{
     max-width:430px;
     margin:24px auto 0;
@@ -694,7 +669,7 @@
     box-shadow:0 8px 24px rgba(0,0,0,0.4);
   }
 
-  /* ---------------- CV view ---------------- */
+  
   .cv-wrap{
     max-width:380px;
     margin:24px auto 0;
@@ -741,12 +716,7 @@
   .cv-download-btn:hover{ opacity:0.92; box-shadow:0 8px 24px rgba(207,169,104,0.3); transform:translateY(-1px); }
   .cv-error{ color:var(--danger); font-size:0.8rem; margin-top:8px; min-height:1.1em; text-align:center; }
 
-  /* ===================================================================
-     UNIFIED NEON GLOW BUTTON SYSTEM
-     Every clickable button across the site now shares the reference
-     look: a near-black glass surface with a breathing red / cyan glow
-     that splits to either side, exactly like the LOGIN button sample.
-  =================================================================== */
+  
   :root{
     --neon-red:#ff4d6d;
     --neon-red-soft:rgba(255,77,109,0.32);
@@ -806,8 +776,7 @@
   }
   @keyframes runBorder{ to{ --run-angle:360deg; } }
 
-  /* Stagger so the Submit / Download buttons that appear together
-     (e.g. a category's Submit button) don't breathe and spin in lockstep. */
+  
   .sec-submit-btn{ animation-delay:-0.4s, -0.2s; }
   .auth-submit{ animation-delay:-1.8s, -1.3s; }
   .cv-download-btn{ animation-delay:-2.7s, -1.9s; }
@@ -816,14 +785,10 @@
     text-shadow:0 0 8px currentColor;
   }
 
-  /* Hero buttons, the sidebar nav (Home ... ID Card), vault/notepad category
-     buttons, and account boxes are intentionally plain now — only Submit,
-     Download, and the Tonir Shaik Gallery button keep the neon design. */
+  
   .nav-doc-link{ margin-bottom:0; border-radius:8px !important; }
 
-  /* The "← Home" back-link keeps a plain, calm look on purpose (it's a
-     small repeated utility control, not a primary call-to-action, so it
-     no longer gets the neon glow / traveling border). */
+  
   .back-link{
     display:inline-flex; align-items:center; gap:6px;
     color:var(--text-dim); cursor:pointer;
@@ -831,12 +796,7 @@
   }
   .back-link:hover{ color:var(--gold); }
 
-  /* NOTE: the sitewide rule at the top of this stylesheet collapses every
-     animation's duration to ~0 under prefers-reduced-motion (so the orb
-     drift, parallax, typing effect etc. all stop, per accessibility best
-     practice). The neon glow + traveling border-light is a deliberate,
-     purely decorative, low-amplitude effect the site owner wants visible
-     at all times, so it's explicitly exempted here rather than frozen. */
+  
   @media (prefers-reduced-motion: reduce){
     .sec-submit-btn, .auth-submit, .cv-download-btn, .gallery-btn{
       animation-duration:3.6s, 2.6s !important;
@@ -877,6 +837,23 @@
     .menu-toggle{ top:14px; left:14px; width:42px; height:42px; }
     .hero-badges{ justify-content:center; }
     .hero-badge{ justify-content:center; }
+  }
+
+  
+  @media (max-width:780px), (pointer:coarse){
+    .sec-submit-btn, .auth-submit, .cv-download-btn, .gallery-btn{
+      animation:none !important;
+      background-image:linear-gradient(145deg,#0B0D12,#151A22) !important;
+      box-shadow:-6px 0 16px -6px var(--neon-red-soft), 6px 0 16px -6px var(--neon-cyan-soft), 0 6px 18px rgba(0,0,0,0.5) !important;
+    }
+    .sec-submit-btn:hover, .auth-submit:hover, .cv-download-btn:hover, .gallery-btn:hover{
+      animation:none !important;
+      background-image:linear-gradient(145deg,#11141B,#1B212B) !important;
+    }
+    .bg-orb{ animation:none !important; }
+    .hero-photo{ animation:none !important; }
+    .overlay{ backdrop-filter:none !important; }
+    .hero-badge{ backdrop-filter:none !important; }
   }
 </style>
 </head>
@@ -1302,11 +1279,7 @@
   </main>
 
   <script>
-    /* ============================================================
-       API_BASE — this is your Cloudflare Worker URL.
-       If you change the Worker's name or subdomain, only update
-       this one line.
-       ============================================================ */
+    
     const API_BASE = "https://tonir-vault-api.tonirshaik.workers.dev";
 
     const body = document.body;
@@ -1400,9 +1373,6 @@
         showView(el.dataset.view);
         setOpen(false);
 
-        // Auto-focus the password field so typing can start immediately,
-        // no extra click needed. Enter already submits (see each field's
-        // onkeydown handler).
         const fieldId = viewPasswordField[el.dataset.view];
         if(fieldId){
           requestAnimationFrame(() => {
@@ -1413,7 +1383,7 @@
       });
     });
 
-    /* ---------------- Shared helper: log in to the Worker ---------------- */
+    
     async function apiLogin(category, password){
       let res;
       try{
@@ -1434,7 +1404,7 @@
         e.serverMessage = data.error;
         throw e;
       }
-      return data.token; // temporary token
+      return data.token;
     }
 
     async function apiGetDocument(category, token){
@@ -1456,11 +1426,7 @@
       return data.link;
     }
 
-    /* Turns a failed apiLogin/apiGetDocument error into the right message
-       to show the user — network problem, rate-limited, wrong password,
-       or (for the document step) a missing/misconfigured link on the
-       server. "stage" tells us which call actually failed, since a 404
-       from /document is NOT a wrong password. */
+    
     function describeAuthError(err, stage){
       if(err.isNetworkError){
         return 'নেটওয়ার্ক সমস্যা — সার্ভারে পৌঁছানো যাচ্ছে না (WiFi/DNS চেক করুন)';
@@ -1474,19 +1440,15 @@
       return 'Incorrect password';
     }
 
-    /* ---------------- Generic single-document module ----------------
-       (CV, Diploma, School, Citizen, Passport, ID Card — all follow
-       the same pattern, so we build one reusable function set) */
+    
     function makeDocModule(prefix, category){
       const passId = prefix + 'PasswordField';
       const eyeId  = prefix + 'EyeIcon';
       const btnId  = prefix + 'DownloadBtn';
       const errId  = prefix + 'Error';
 
-      let inFlight = false; // avoid double-submits while a check is running
+      let inFlight = false;
 
-      // Button appears as soon as the user starts typing. Nothing is
-      // checked until Submit/Download is actually clicked.
       function onInput(){
         const val = document.getElementById(passId).value;
         const btn = document.getElementById(btnId);
@@ -1562,7 +1524,7 @@
     const passportModule = makeDocModule('passport', 'passport');
     const nidModule      = makeDocModule('nid', 'nid');
 
-    /* ---------------- Private module (password -> dashboard with links) ---------------- */
+    
     let privToken = null;
     let privLinksCache = null;
 
@@ -1663,13 +1625,13 @@
     function nidToggleVisibility(){ nidModule.toggleVisibility(); }
     function nidResetLock(){ nidModule.resetLock(); }
 
-    /* ---------------- 2FA / Authenticator module ---------------- */
+    
     let authToken = null;
     let authActiveGroup = null;
     let authTimerStarted = false;
-    let authLastRenderedData = null; // tracks which fetch's data is currently in the DOM
-    let authProgressEls = {};        // account name -> its progress-fill element
-    let authProgressTimer = null;    // smooth 100ms countdown ticker
+    let authLastRenderedData = null;
+    let authProgressEls = {};
+    let authProgressTimer = null;
 
     function resetAuthLock(){
       authToken = null;
@@ -1701,9 +1663,6 @@
       }
     }
 
-    // The password is only checked when the user presses Submit or Enter -
-    // never mid-typing - so a still-incomplete password can never flash
-    // "Incorrect password" by mistake.
     function authClearError(){
       document.getElementById('authLockError').textContent = '';
     }
@@ -1722,7 +1681,7 @@
         authToken = await apiLogin('totp', val);
         errorEl.textContent = '';
         authShowMenu();
-        authPrefetchAll(); // warm up every account's codes in the background
+        authPrefetchAll();
       }catch(err){
         errorEl.textContent = describeAuthError(err, 'login');
       }finally{
@@ -1745,11 +1704,10 @@
       document.getElementById('authMenuScreen').classList.add('active');
     }
 
-    /* ---- Prefetch: warm every account's codes right after unlock, so
-       opening a category is instant with no loading flash. ---- */
+    
     const AUTH_GROUPS = ['Gmail','Facebook','Instagram','TikTok','Mega','linkedin','Telegram','WhatsApp'];
-    let authPrefetchCache = {};   // group -> { data, fetchedAt }
-    let authPrefetchPromises = {}; // group -> in-flight promise (avoids duplicate fetches)
+    let authPrefetchCache = {};
+    let authPrefetchPromises = {};
 
     function authFetchGroup(group){
       if(authPrefetchPromises[group]) return authPrefetchPromises[group];
@@ -1768,7 +1726,7 @@
 
     function authPrefetchAll(){
       authPrefetchCache = {};
-      AUTH_GROUPS.forEach(g => authFetchGroup(g).catch(() => { /* will retry when opened */ }));
+      AUTH_GROUPS.forEach(g => authFetchGroup(g).catch(() => {  }));
     }
 
     async function authOpenCategory(group){
@@ -1777,11 +1735,6 @@
       document.getElementById('authMainTitle').textContent = group + " Code";
       const container = document.getElementById('authCodeContainer');
       container.innerHTML = "";
-      // We just wiped the container above, so force renderCodes to rebuild
-      // the boxes from scratch even if the underlying data object hasn't
-      // changed (e.g. re-entering the same account within a few seconds) -
-      // otherwise renderCodes sees "same data as before" and skips rebuilding,
-      // leaving the screen blank.
       authLastRenderedData = null;
       authProgressEls = {};
 
@@ -1790,16 +1743,13 @@
 
       let entry = authPrefetchCache[group];
       if(!entry){
-        // Not warmed up yet (e.g. very first tap right after unlock) - fetch
-        // it now. No "Loading..." label is shown; the codes simply appear
-        // the instant the response lands.
         try{
           entry = await authFetchGroup(group);
         }catch(e){
           container.innerHTML = "<p style='text-align:center;color:var(--slate);'>Couldn't load codes — try again.</p>";
           return;
         }
-        if(authActiveGroup !== group) return; // user navigated away while waiting
+        if(authActiveGroup !== group) return;
       }
 
       authLastFetch = entry.fetchedAt;
@@ -1817,11 +1767,6 @@
       if(!authToken || !authActiveGroup) return;
       const requestedGroup = authActiveGroup;
 
-      // Fetch fresh codes from the server every 3 seconds, not every second
-      // (the remaining time is calculated locally for the progress bar).
-      // The cache is only reusable when it belongs to the group that's
-      // currently open — otherwise switching accounts (e.g. Gmail -> Facebook)
-      // inside that 3s window would show the previous group's codes.
       const now = Date.now();
       const cache = authRefreshCodes._cache;
       if(now - authLastFetch < 3000 && cache && cache.group === requestedGroup){
@@ -1830,24 +1775,17 @@
       }
       try{
         const entry = await authFetchGroup(requestedGroup);
-        // If the user switched to a different account while this request was
-        // still in flight, discard the response instead of caching/rendering
-        // it under the now-active (different) group.
         if(authActiveGroup !== requestedGroup) return;
         authLastFetch = entry.fetchedAt;
         authRefreshCodes._cache = entry;
         renderCodes(entry, authLastFetch);
-      }catch(e){ /* network glitch, will retry on the next tick */ }
+      }catch(e){  }
     }
 
     function renderCodes(cacheObj, now){
       const container = document.getElementById('authCodeContainer');
       const { data, fetchedAt } = cacheObj;
 
-      // Only rebuild the account boxes when the underlying data actually
-      // changed (a real fetch) — not on every visual tick. Rebuilding the
-      // DOM every second was why the bar looked like it jumped in steps
-      // instead of gliding down smoothly.
       if(data !== authLastRenderedData){
         authLastRenderedData = data;
         authProgressEls = {};
@@ -1865,8 +1803,6 @@
         });
       }
 
-      // Smoothly update just the bar width, many times a second, using the
-      // precise (fractional) elapsed time rather than a once-a-second jump.
       const elapsedSec = (now - fetchedAt) / 1000;
       data.accounts.forEach((acc) => {
         const fillEl = authProgressEls[acc.name];
@@ -1880,11 +1816,11 @@
         authProgressTimer = setInterval(() => {
           const c = authRefreshCodes._cache;
           if(c) renderCodes(c, Date.now());
-        }, 100); // 10x/sec keeps the countdown gliding instead of stepping
+        }, 100);
       }
     }
 
-    /* ---------------- Vault module ---------------- */
+    
     let secToken = null;
 
     function secToggleVisibility(){
@@ -1899,9 +1835,6 @@
       }
     }
 
-    // The password is only checked when the user presses Submit or Enter -
-    // never mid-typing - so a still-incomplete password can never flash
-    // "Incorrect password" by mistake.
     function secClearError(){
       document.getElementById('secLockError').textContent = '';
     }
@@ -1958,13 +1891,8 @@
       document.getElementById('secLockError').textContent = '';
     }
 
-    /* ---------------- Presentation layer: scroll progress,
-       back-to-top, scroll reveal. Purely visual - does not touch any
-       existing state, tokens, or API calls above. ---------------- */
+    
     (function(){
-      // Scroll progress bar + back-to-top button. The page itself scrolls
-      // (the sidebar is fixed-height, main is a normal flow element), so
-      // we track scroll on the window/document, not on main.
       const progressEl = document.getElementById('scrollProgress');
       const backToTop = document.getElementById('backToTop');
       function onScroll(){
@@ -1989,9 +1917,6 @@
         });
       }
 
-      // Scroll reveal: fade/slide elements in the first time they enter
-      // the viewport. Falls back to showing everything immediately if
-      // IntersectionObserver isn't available.
       const revealEls = document.querySelectorAll('.reveal');
       if('IntersectionObserver' in window){
         const io = new IntersectionObserver((entries) => {
@@ -2007,10 +1932,6 @@
         revealEls.forEach(el => el.classList.add('in-view'));
       }
 
-      // Sidebar sliding active-indicator: sits behind whichever nav link
-      // is currently active and glides to the new one on click. Purely
-      // cosmetic - the real active state is still the .active class
-      // already managed by showView() elsewhere in this file.
       const navIndicator = document.getElementById('navIndicator');
       const navLinks = document.querySelectorAll('nav a[data-view]');
       function moveNavIndicator(){
@@ -2025,9 +1946,6 @@
       window.addEventListener('resize', moveNavIndicator);
       setTimeout(moveNavIndicator, 50);
 
-      // Hero parallax: a subtle, lightweight tilt of the profile photo
-      // toward the cursor. Respects reduced-motion and does nothing on
-      // touch devices (no mousemove events).
       const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const heroEl = document.getElementById('home');
       const parallaxEl = document.querySelector('.hero-parallax');
@@ -2045,13 +1963,9 @@
         });
       }
 
-      // Button ripple: a small expanding-circle feedback on press for every
-      // premium button/card across the vault, authenticator, private, and
-      // document pages. Added via event delegation so it works on any
-      // matching element regardless of when it appears in the DOM, and it
-      // never calls preventDefault/stopPropagation - existing onclick
-      // handlers on these same elements keep firing exactly as before.
-      const rippleSelector = '.sec-btn, .auth-cat-btn, .auth-account-box, .doc-card, .btn-primary, .btn-secondary, .cv-download-btn';
+      const isMobilePerf = window.matchMedia && window.matchMedia('(max-width:780px), (pointer:coarse)').matches;
+      const rippleSelector = '.sec-btn, .auth-cat-btn, .auth-account-box, .btn-primary, .btn-secondary, .cv-download-btn';
+      if(!isMobilePerf){
       document.addEventListener('click', (e) => {
         const target = e.target.closest(rippleSelector);
         if(!target) return;
@@ -2075,6 +1989,7 @@
         });
         setTimeout(() => ripple.remove(), 600);
       });
+      }
     })();
   </script>
 </body>
