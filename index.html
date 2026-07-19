@@ -418,7 +418,7 @@
     font-size:0.9rem; font-weight:600; cursor:pointer; position:relative; overflow:hidden;
     transition:transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s var(--ease), opacity 0.25s var(--ease), background 0.25s var(--ease), color 0.25s var(--ease);
   }
-  .btn-primary:hover, .btn-secondary:hover, .sec-btn:hover, .auth-submit:hover, .cv-download-btn:hover, .back-link:hover, .gallery-btn:hover, .menu-toggle:hover, .sidebar-footer a:hover, .hero-social a:hover, .auth-cat-btn:hover, .auth-account-box:hover, nav a:hover{
+  .btn-primary:hover, .btn-secondary:hover, .sec-btn:hover, .cv-download-btn:hover, .back-link:hover, .gallery-btn:hover, .menu-toggle:hover, .sidebar-footer a:hover, .hero-social a:hover, nav a:hover{
     transform:translateY(-3px) scale(1.01);
   }
   .btn-primary{
@@ -562,112 +562,9 @@
 
   .sec-screen{ display:none; }
   .sec-screen.active{ display:block; animation:authFade 0.3s ease-in-out; }
+  @keyframes authFade{ from{opacity:0;} to{opacity:1;} }
   .sec-error{ color:var(--danger); font-size:0.8rem; margin-top:8px; min-height:1.1em; }
 
-  
-  .auth-wrap{
-    max-width:430px;
-    margin:24px auto 0;
-    background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0) 40%), var(--surface-solid);
-    border:1px solid var(--border);
-    border-radius:20px;
-    padding:34px 30px 30px;
-    box-shadow:0 20px 50px rgba(0,0,0,0.45);
-    position:relative;
-    overflow:hidden;
-    transition:border-color 0.3s ease, box-shadow 0.3s ease;
-  }
-  .auth-wrap::before{
-    content:''; position:absolute; top:0; left:0; right:0; height:3px;
-    background:linear-gradient(90deg,var(--cyan),var(--gold));
-    opacity:0.85;
-  }
-  .auth-wrap:hover{ border-color:var(--border-strong); box-shadow:0 24px 60px rgba(0,0,0,0.5); }
-  .auth-title{
-    text-align:center;
-    font-family:'Fraunces',serif;
-    font-size:1.35rem;
-    font-weight:600;
-    margin:0 0 22px;
-    padding-bottom:16px;
-    border-bottom:1px solid var(--border);
-    color:var(--text);
-  }
-  .auth-screen{ display:none; }
-  .auth-screen.active{ display:block; animation:authFade 0.25s ease-in-out; }
-  @keyframes authFade{ from{opacity:0;} to{opacity:1;} }
-
-  .auth-pass-wrap{ position:relative; margin-bottom:16px; }
-  .auth-pass-wrap input{
-    width:100%; padding:15px 44px 15px 16px; border:1px solid var(--border);
-    border-radius:12px; box-sizing:border-box; font-size:0.98rem;
-    text-align:center; outline:none; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif;
-  }
-  .auth-pass-wrap input:focus{ border-color:var(--gold); box-shadow:0 0 0 4px var(--gold-soft); }
-  .auth-toggle-eye{
-    position:absolute; right:14px; top:50%; transform:translateY(-50%);
-    cursor:pointer; color:var(--text-dim);
-  }
-  .auth-submit{
-    width:100%; padding:14px; background:linear-gradient(135deg,var(--gold),#B98F4C); color:#12100A;
-    border:none; border-radius:12px; cursor:pointer; font-size:0.98rem;
-    font-weight:700; display:block; margin-top:6px;
-  }
-  .auth-submit:hover{ opacity:0.9; }
-  .auth-error{ color:var(--danger); font-size:0.82rem; text-align:center; margin-top:10px; min-height:1.1em; }
-
-  .auth-category-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .auth-cat-btn{
-    padding:18px 10px; border-radius:14px; border:1px solid var(--border);
-    background:var(--surface); cursor:pointer; font-weight:600; font-size:0.92rem;
-    text-align:center; color:var(--text);
-    display:flex; align-items:center; justify-content:center; gap:9px;
-    transition:border-color 0.2s var(--ease), background 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
-  }
-  .auth-cat-btn:hover{ border-color:var(--cyan); background:var(--cyan-soft); transform:translateY(-2px); box-shadow:0 10px 26px rgba(95,216,207,0.15); }
-  .auth-cat-btn .fa-envelope{ color:#EA4335; }
-  .auth-cat-btn .fa-facebook{ color:#1877F2; }
-  .auth-cat-btn .fa-instagram{ color:#E4405F; }
-  .auth-cat-btn .fa-tiktok{ color:#E9E9EA; }
-  .auth-cat-btn .fa-cloud{ color:#00A1FF; }
-  .auth-cat-btn .fa-linkedin{ color:#0077B5; }
-  .auth-cat-btn .fa-telegram{ color:#24A1DE; }
-  .auth-cat-btn .fa-whatsapp{ color:#25D366; }
-
-  .auth-back-btn{
-    margin-bottom:14px; cursor:pointer; color:var(--cyan); font-weight:600;
-    display:flex; align-items:center; gap:8px; font-size:0.88rem;
-  }
-
-  #authCodeContainer{ max-height:430px; overflow-y:auto; padding-right:4px; }
-  #authCodeContainer::-webkit-scrollbar{ width:6px; }
-  #authCodeContainer::-webkit-scrollbar-thumb{ background:var(--border-strong); border-radius:10px; }
-
-  .auth-account-box{
-    background:var(--surface); border:1px solid var(--border); padding:15px 16px;
-    border-radius:14px; margin-bottom:12px; text-align:left; cursor:pointer;
-    transition:0.2s var(--ease);
-  }
-  .auth-account-box:hover{ border-color:var(--gold); transform:translateY(-2px); box-shadow:0 8px 22px rgba(0,0,0,0.25); }
-  .auth-account-box:active{ background:var(--gold-soft); transform:translateY(0); }
-  .auth-account-name{
-    font-family:var(--mono);
-    font-size:0.68rem; font-weight:600; color:var(--text-dim);
-    text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:6px;
-  }
-  .auth-otp-code{
-    font-size:1.9rem; font-weight:700; color:var(--text);
-    letter-spacing:0.12em; font-family:var(--mono);
-  }
-  .auth-progress-bar{ height:5px; background:var(--border); border-radius:10px; margin-top:10px; overflow:hidden; }
-  .auth-progress-fill{ height:100%; background:linear-gradient(90deg,var(--gold),var(--cyan)); width:0%; transition:width 0.1s linear; }
-
-  .auth-copy-alert{
-    position:fixed; top:20px; left:50%; transform:translateX(-50%);
-    background:linear-gradient(135deg,var(--gold),var(--cyan)); color:#12100A; padding:10px 26px;
-    border-radius:50px; font-weight:700; font-size:0.85rem; display:none; z-index:1200;
-    box-shadow:0 8px 24px rgba(0,0,0,0.4);
-  }
 
   
   .cv-wrap{
@@ -730,7 +627,7 @@
     inherits:false;
     initial-value:0deg;
   }
-  .sec-submit-btn, .auth-submit, .cv-download-btn, .gallery-btn{
+  .sec-submit-btn, .cv-download-btn, .gallery-btn{
     color:var(--text) !important;
     border:2px solid transparent !important;
     background-image:
@@ -747,7 +644,7 @@
        0 6px 18px rgba(0,0,0,0.5);
     animation:neonBreathe 3.6s ease-in-out infinite, runBorder 2.6s linear infinite;
   }
-  .sec-submit-btn:hover, .auth-submit:hover, .cv-download-btn:hover, .gallery-btn:hover{
+  .sec-submit-btn:hover, .cv-download-btn:hover, .gallery-btn:hover{
     background-image:
       linear-gradient(145deg,#11141B,#1B212B),
       conic-gradient(from var(--run-angle),
@@ -760,7 +657,7 @@
        13px 0 30px -5px var(--neon-cyan-strong),
        0 10px 26px rgba(0,0,0,0.55);
   }
-  .sec-submit-btn:active, .auth-submit:active, .cv-download-btn:active, .gallery-btn:active{
+  .sec-submit-btn:active, .cv-download-btn:active, .gallery-btn:active{
     box-shadow:
       -6px 0 16px -6px var(--neon-red-soft),
        6px 0 16px -6px var(--neon-cyan-soft),
@@ -778,10 +675,9 @@
 
   
   .sec-submit-btn{ animation-delay:-0.4s, -0.2s; }
-  .auth-submit{ animation-delay:-1.8s, -1.3s; }
   .cv-download-btn{ animation-delay:-2.7s, -1.9s; }
   .gallery-btn{ animation-delay:-1.1s, -0.6s; }
-  .sec-submit-btn i, .auth-submit i, .cv-download-btn i{
+  .sec-submit-btn i, .cv-download-btn i{
     text-shadow:0 0 8px currentColor;
   }
 
@@ -798,7 +694,7 @@
 
   
   @media (prefers-reduced-motion: reduce){
-    .sec-submit-btn, .auth-submit, .cv-download-btn, .gallery-btn{
+    .sec-submit-btn, .cv-download-btn, .gallery-btn{
       animation-duration:3.6s, 2.6s !important;
       animation-iteration-count:infinite, infinite !important;
       animation-timing-function:ease-in-out, linear !important;
@@ -820,7 +716,7 @@
     .hero-actions, .hero-social, .hero-badges{ justify-content:center; }
     .hero-photo{ width:150px; height:150px; }
     h1{ font-size:clamp(1.95rem, 7vw, 2.45rem); white-space:normal; }
-    .auth-wrap, .sec-wrap, .cv-wrap{ padding:26px 22px; max-width:100%; }
+    .sec-wrap, .cv-wrap{ padding:26px 22px; max-width:100%; }
     .footer-top{ flex-direction:column; gap:24px; }
     .footer-links{ max-width:100%; }
   }
@@ -841,12 +737,12 @@
 
   
   @media (max-width:780px), (pointer:coarse){
-    .sec-submit-btn, .auth-submit, .cv-download-btn, .gallery-btn{
+    .sec-submit-btn, .cv-download-btn, .gallery-btn{
       animation:none !important;
       background-image:linear-gradient(145deg,#0B0D12,#151A22) !important;
       box-shadow:-6px 0 16px -6px var(--neon-red-soft), 6px 0 16px -6px var(--neon-cyan-soft), 0 6px 18px rgba(0,0,0,0.5) !important;
     }
-    .sec-submit-btn:hover, .auth-submit:hover, .cv-download-btn:hover, .gallery-btn:hover{
+    .sec-submit-btn:hover, .cv-download-btn:hover, .gallery-btn:hover{
       animation:none !important;
       background-image:linear-gradient(145deg,#11141B,#1B212B) !important;
     }
@@ -866,8 +762,6 @@
   <div class="bg-vignette"></div>
   <div id="scrollProgress"></div>
   <button id="backToTop" aria-label="Back to top"><i class="fa-solid fa-arrow-up"></i></button>
-
-  <div id="authCopyNotice" class="auth-copy-alert">Copied!</div>
 
   <button class="menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false">
     <span></span><span></span><span></span>
@@ -890,7 +784,7 @@
       <div class="nav-indicator" id="navIndicator"></div>
       <a href="#home" class="active nav-doc-link" data-view="default" style="animation-delay:-0.4s,-0.6s"><i class="fa-solid fa-house"></i>Home</a>
       <a href="#" class="nav-doc-link" data-view="notepad" style="animation-delay:-1.7s,-2.1s"><i class="fa-solid fa-note-sticky"></i>Universal Notepad</a>
-      <a href="#" class="nav-doc-link" data-view="totp" style="animation-delay:-2.6s,-0.3s"><i class="fa-solid fa-shield-halved"></i>Authenticator</a>
+      <a href="https://tonirshaik.github.io/tonirshaik_web/authenticator.html" target="_blank" rel="noopener noreferrer" class="nav-doc-link" style="animation-delay:-2.6s,-0.3s"><i class="fa-solid fa-shield-halved"></i>Authenticator</a>
       <a href="#" class="nav-doc-link" data-view="security" style="animation-delay:-0.9s,-1.6s"><i class="fa-solid fa-key"></i>Vault</a>
       <a href="#" class="nav-doc-link" data-view="private" style="animation-delay:-3.1s,-0.9s"><i class="fa-solid fa-lock"></i>Private</a>
       <a href="#" class="nav-doc-link" data-view="cv" style="animation-delay:-1.2s,-1.9s"><i class="fa-solid fa-file-invoice"></i>CV</a>
@@ -1004,7 +898,7 @@
             <a href="#" data-view="school">School Certificate</a>
             <a href="#" data-view="citizen">Citizen Certificate</a>
             <a href="#" data-view="nid">ID Card</a>
-            <a href="#" data-view="totp">Authenticator</a>
+            <a href="https://tonirshaik.github.io/tonirshaik_web/authenticator.html" target="_blank" rel="noopener noreferrer">Authenticator</a>
             <a href="#" data-view="security">Vault</a>
             <a href="mailto:tonirshaik@gmail.com">Email</a>
           </div>
@@ -1102,44 +996,6 @@
           <button class="sec-btn" onclick="privOpenLink('private')">
             <i class="fas fa-lock"></i> Private
           </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="view view-default" id="view-totp">
-      <div class="embed-header">
-        <span class="back-link" data-view="default">← Home</span>
-        <h2>Authenticator</h2>
-      </div>
-
-      <div class="auth-wrap">
-        <h2 class="auth-title" id="authMainTitle">🔒 Authenticator</h2>
-
-        <div id="authLockScreen" class="auth-screen active">
-          <div class="auth-pass-wrap">
-            <input type="password" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" id="authMasterPass" placeholder="Enter password..." oninput="authClearError()" onkeydown="if(event.key==='Enter') authTryUnlock()">
-            <span class="auth-toggle-eye" id="authEyeIcon" onclick="authTogglePass()"><i class="fa-solid fa-eye"></i></span>
-          </div>
-          <button id="authSubmitBtn" class="auth-submit" onclick="authTryUnlock()">Submit</button>
-          <div class="auth-error" id="authLockError"></div>
-        </div>
-
-        <div id="authMenuScreen" class="auth-screen">
-          <div class="auth-category-grid">
-            <div class="auth-cat-btn" onclick="authOpenCategory('Gmail')"><i class="fa-solid fa-envelope"></i> Gmail</div>
-            <div class="auth-cat-btn" onclick="authOpenCategory('Facebook')"><i class="fa-brands fa-facebook"></i> Facebook</div>
-            <div class="auth-cat-btn" onclick="authOpenCategory('Instagram')"><i class="fa-brands fa-instagram"></i> Instagram</div>
-            <div class="auth-cat-btn" onclick="authOpenCategory('TikTok')"><i class="fa-brands fa-tiktok"></i> TikTok</div>
-            <div class="auth-cat-btn" onclick="authOpenCategory('Mega')"><i class="fa-solid fa-cloud"></i> Mega</div>
-            <div class="auth-cat-btn" onclick="authOpenCategory('linkedin')"><i class="fa-brands fa-linkedin"></i> LinkedIn</div>
-            <div class="auth-cat-btn" onclick="authOpenCategory('Telegram')"><i class="fa-brands fa-telegram"></i> Telegram</div>
-            <div class="auth-cat-btn" onclick="authOpenCategory('WhatsApp')"><i class="fa-brands fa-whatsapp"></i> WhatsApp</div>
-          </div>
-        </div>
-
-        <div id="authListScreen" class="auth-screen">
-          <div class="auth-back-btn" onclick="authShowMenu()"><i class="fa-solid fa-arrow-left"></i> Back to Menu</div>
-          <div id="authCodeContainer"></div>
         </div>
       </div>
     </div>
@@ -1345,7 +1201,6 @@
       });
     }
     const viewPasswordField = {
-      totp: 'authMasterPass',
       security: 'secPasswordField',
       private: 'privPasswordField',
       cv: 'cvPasswordField',
@@ -1361,7 +1216,6 @@
     document.querySelectorAll('[data-view]').forEach(el => {
       el.addEventListener('click', (e) => {
         e.preventDefault();
-        if(el.dataset.view === 'totp'){ resetAuthLock(); }
         if(el.dataset.view === 'security'){ secLogout(); }
         if(el.dataset.view === 'private'){ privLogout(); }
         if(el.dataset.view === 'cv'){ cvResetLock(); }
@@ -1625,202 +1479,6 @@
     function nidToggleVisibility(){ nidModule.toggleVisibility(); }
     function nidResetLock(){ nidModule.resetLock(); }
 
-    
-    let authToken = null;
-    let authActiveGroup = null;
-    let authTimerStarted = false;
-    let authLastRenderedData = null;
-    let authProgressEls = {};
-    let authProgressTimer = null;
-
-    function resetAuthLock(){
-      authToken = null;
-      authActiveGroup = null;
-      authPrefetchCache = {};
-      authPrefetchPromises = {};
-      authLastRenderedData = null;
-      authProgressEls = {};
-      if(authProgressTimer){ clearInterval(authProgressTimer); authProgressTimer = null; }
-      const passInput = document.getElementById('authMasterPass');
-      const errorEl = document.getElementById('authLockError');
-      if(passInput){ passInput.value = ''; passInput.type = 'password'; }
-      if(errorEl){ errorEl.textContent = ''; }
-      document.getElementById('authEyeIcon').innerHTML = '<i class="fa-solid fa-eye"></i>';
-      document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
-      document.getElementById('authLockScreen').classList.add('active');
-      document.getElementById('authMainTitle').textContent = '🔒 Authenticator';
-    }
-
-    function authTogglePass(){
-      const p = document.getElementById('authMasterPass');
-      const eye = document.getElementById('authEyeIcon');
-      if(p.type === "password"){
-        p.type = "text";
-        eye.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
-      } else {
-        p.type = "password";
-        eye.innerHTML = '<i class="fa-solid fa-eye"></i>';
-      }
-    }
-
-    function authClearError(){
-      document.getElementById('authLockError').textContent = '';
-    }
-
-    let authInFlight = false;
-    async function authTryUnlock(){
-      const val = document.getElementById('authMasterPass').value.trim();
-      const errorEl = document.getElementById('authLockError');
-      const btn = document.getElementById('authSubmitBtn');
-      if(!val || authInFlight) return;
-      authInFlight = true;
-      const originalLabel = btn.textContent;
-      btn.textContent = 'Checking...';
-      btn.disabled = true;
-      try{
-        authToken = await apiLogin('totp', val);
-        errorEl.textContent = '';
-        authShowMenu();
-        authPrefetchAll();
-      }catch(err){
-        errorEl.textContent = describeAuthError(err, 'login');
-      }finally{
-        btn.textContent = originalLabel;
-        btn.disabled = false;
-        authInFlight = false;
-      }
-    }
-
-    function authCopyText(text){
-      navigator.clipboard?.writeText(text);
-      const notice = document.getElementById('authCopyNotice');
-      notice.style.display = 'block';
-      setTimeout(() => { notice.style.display = 'none'; }, 1300);
-    }
-
-    function authShowMenu(){
-      document.getElementById('authMainTitle').textContent = "🔒 Authenticator";
-      document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
-      document.getElementById('authMenuScreen').classList.add('active');
-    }
-
-    
-    const AUTH_GROUPS = ['Gmail','Facebook','Instagram','TikTok','Mega','linkedin','Telegram','WhatsApp'];
-    let authPrefetchCache = {};
-    let authPrefetchPromises = {};
-
-    function authFetchGroup(group){
-      if(authPrefetchPromises[group]) return authPrefetchPromises[group];
-      const p = (async () => {
-        const res = await fetch(`${API_BASE}/totp?group=${encodeURIComponent(group)}&token=${encodeURIComponent(authToken)}`);
-        const data = await res.json();
-        if(!res.ok) throw new Error('fetch failed');
-        const entry = { data, fetchedAt: Date.now(), group };
-        authPrefetchCache[group] = entry;
-        return entry;
-      })();
-      authPrefetchPromises[group] = p;
-      p.finally(() => { delete authPrefetchPromises[group]; });
-      return p;
-    }
-
-    function authPrefetchAll(){
-      authPrefetchCache = {};
-      AUTH_GROUPS.forEach(g => authFetchGroup(g).catch(() => {  }));
-    }
-
-    async function authOpenCategory(group){
-      if(!authToken) return;
-      authActiveGroup = group;
-      document.getElementById('authMainTitle').textContent = group + " Code";
-      const container = document.getElementById('authCodeContainer');
-      container.innerHTML = "";
-      authLastRenderedData = null;
-      authProgressEls = {};
-
-      document.getElementById('authMenuScreen').classList.remove('active');
-      document.getElementById('authListScreen').classList.add('active');
-
-      let entry = authPrefetchCache[group];
-      if(!entry){
-        try{
-          entry = await authFetchGroup(group);
-        }catch(e){
-          container.innerHTML = "<p style='text-align:center;color:var(--slate);'>Couldn't load codes — try again.</p>";
-          return;
-        }
-        if(authActiveGroup !== group) return;
-      }
-
-      authLastFetch = entry.fetchedAt;
-      authRefreshCodes._cache = entry;
-      renderCodes(entry, Date.now());
-
-      if(!authTimerStarted){
-        authTimerStarted = true;
-        setInterval(authRefreshCodes, 1000);
-      }
-    }
-
-    let authLastFetch = 0;
-    async function authRefreshCodes(){
-      if(!authToken || !authActiveGroup) return;
-      const requestedGroup = authActiveGroup;
-
-      const now = Date.now();
-      const cache = authRefreshCodes._cache;
-      if(now - authLastFetch < 3000 && cache && cache.group === requestedGroup){
-        renderCodes(cache, now);
-        return;
-      }
-      try{
-        const entry = await authFetchGroup(requestedGroup);
-        if(authActiveGroup !== requestedGroup) return;
-        authLastFetch = entry.fetchedAt;
-        authRefreshCodes._cache = entry;
-        renderCodes(entry, authLastFetch);
-      }catch(e){  }
-    }
-
-    function renderCodes(cacheObj, now){
-      const container = document.getElementById('authCodeContainer');
-      const { data, fetchedAt } = cacheObj;
-
-      if(data !== authLastRenderedData){
-        authLastRenderedData = data;
-        authProgressEls = {};
-        container.innerHTML = "";
-        data.accounts.forEach((acc) => {
-          const box = document.createElement('div');
-          box.className = 'auth-account-box';
-          box.onclick = () => authCopyText(acc.code);
-          box.innerHTML = `
-            <span class="auth-account-name">${acc.name}</span>
-            <div class="auth-otp-code">${acc.code}</div>
-            <div class="auth-progress-bar"><div class="auth-progress-fill"></div></div>`;
-          container.appendChild(box);
-          authProgressEls[acc.name] = box.querySelector('.auth-progress-fill');
-        });
-      }
-
-      const elapsedSec = (now - fetchedAt) / 1000;
-      data.accounts.forEach((acc) => {
-        const fillEl = authProgressEls[acc.name];
-        if(!fillEl) return;
-        const remaining = Math.max(acc.secondsRemaining - elapsedSec, 0);
-        const pct = (remaining / 30) * 100;
-        fillEl.style.width = pct + '%';
-      });
-
-      if(!authProgressTimer){
-        authProgressTimer = setInterval(() => {
-          const c = authRefreshCodes._cache;
-          if(c) renderCodes(c, Date.now());
-        }, 100);
-      }
-    }
-
-    
     let secToken = null;
 
     function secToggleVisibility(){
@@ -1964,7 +1622,7 @@
       }
 
       const isMobilePerf = window.matchMedia && window.matchMedia('(max-width:780px), (pointer:coarse)').matches;
-      const rippleSelector = '.sec-btn, .auth-cat-btn, .auth-account-box, .btn-primary, .btn-secondary, .cv-download-btn';
+      const rippleSelector = '.sec-btn, .btn-primary, .btn-secondary, .cv-download-btn';
       if(!isMobilePerf){
       document.addEventListener('click', (e) => {
         const target = e.target.closest(rippleSelector);
