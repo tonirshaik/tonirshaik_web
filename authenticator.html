@@ -197,6 +197,16 @@
     transition:0.2s var(--ease);
   }
   .auth-add-btn:hover{ background:var(--cyan-soft); border-color:var(--cyan); }
+
+  .auth-cat-btn.auth-add-tile{
+    border-style:dashed; border-color:var(--border-strong); color:var(--cyan);
+  }
+  .auth-cat-btn.auth-add-tile:hover{ background:var(--cyan-soft); border-color:var(--cyan); }
+  .auth-cat-btn .fa-key{ color:var(--gold); }
+  #authAddGroupForm{
+    background:var(--surface); border:1px solid var(--border-strong);
+    border-radius:14px; padding:16px; margin-top:14px;
+  }
   .auth-add-form{
     background:var(--surface); border:1px solid var(--border-strong);
     border-radius:14px; padding:16px; margin-bottom:16px;
@@ -247,7 +257,7 @@
     </div>
 
     <div id="authMenuScreen" class="auth-screen">
-      <div class="auth-category-grid">
+      <div class="auth-category-grid" id="authCategoryGrid">
         <div class="auth-cat-btn" onclick="authOpenCategory('Gmail')"><i class="fa-solid fa-envelope"></i> Gmail</div>
         <div class="auth-cat-btn" onclick="authOpenCategory('Facebook')"><i class="fa-brands fa-facebook"></i> Facebook</div>
         <div class="auth-cat-btn" onclick="authOpenCategory('Instagram')"><i class="fa-brands fa-instagram"></i> Instagram</div>
@@ -256,6 +266,18 @@
         <div class="auth-cat-btn" onclick="authOpenCategory('linkedin')"><i class="fa-brands fa-linkedin"></i> LinkedIn</div>
         <div class="auth-cat-btn" onclick="authOpenCategory('Telegram')"><i class="fa-brands fa-telegram"></i> Telegram</div>
         <div class="auth-cat-btn" onclick="authOpenCategory('Binance')"><i class="fa-brands fa-btc"></i> Binance</div>
+        <div class="auth-cat-btn auth-add-tile" id="authAddGroupTile" onclick="authShowAddGroupForm()"><i class="fa-solid fa-plus"></i> Add Service</div>
+      </div>
+
+      <div id="authAddGroupForm" style="display:none;">
+        <input type="text" id="authNewGroupName" placeholder="Service name (e.g. Netflix)" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; font-size:0.92rem; outline:none; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; box-sizing:border-box;">
+        <input type="text" id="authNewGroupAccName" placeholder="Account name (e.g. you@example.com)" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; font-size:0.92rem; outline:none; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; box-sizing:border-box;">
+        <input type="text" id="authNewGroupSecret" placeholder="Secret key" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') authSaveNewGroup()" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; font-size:0.92rem; outline:none; background:var(--bg); color:var(--text); font-family:var(--mono); letter-spacing:0.04em; box-sizing:border-box;">
+        <div class="auth-add-actions">
+          <button class="auth-add-save" onclick="authSaveNewGroup()">Save</button>
+          <button class="auth-add-cancel" onclick="authHideAddGroupForm()">Cancel</button>
+        </div>
+        <div class="auth-error" id="authAddGroupError"></div>
       </div>
     </div>
 
@@ -342,6 +364,11 @@
       const addBtn = document.getElementById('authAddBtn');
       if(addForm) addForm.style.display = 'none';
       if(addBtn) addBtn.style.display = 'flex';
+      const addGroupForm = document.getElementById('authAddGroupForm');
+      const addGroupTile = document.getElementById('authAddGroupTile');
+      if(addGroupForm) addGroupForm.style.display = 'none';
+      if(addGroupTile) addGroupTile.style.display = 'flex';
+      document.querySelectorAll('.auth-cat-btn-dynamic').forEach(el => el.remove());
     }
 
     function authTogglePass(){
@@ -395,11 +422,94 @@
       document.getElementById('authMainTitle').textContent = "🔒 Authenticator";
       document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
       document.getElementById('authMenuScreen').classList.add('active');
+      authLoadCustomGroups();
     }
 
-    const AUTH_GROUPS = ['Gmail','Facebook','Instagram','TikTok','Mega','linkedin','Telegram','Binance'];
+    const STATIC_GROUPS = ['Gmail','Facebook','Instagram','TikTok','Mega','linkedin','Telegram','Binance'];
+    let AUTH_GROUPS = [...STATIC_GROUPS];
     let authPrefetchCache = {};
     let authPrefetchPromises = {};
+
+    // ---------- কাস্টম (ইউজারের নিজের বানানো) সার্ভিস বাটনগুলো লোড ও রেন্ডার ----------
+    async function authLoadCustomGroups(){
+      if(!authToken) return;
+      try{
+        const res = await fetch(`${API_BASE}/totp-groups?token=${encodeURIComponent(authToken)}`);
+        const data = await res.json();
+        if(!res.ok) return;
+        const extra = (data.groups || []).filter(
+          g => !STATIC_GROUPS.some(s => s.toLowerCase() === g.toLowerCase())
+        );
+        renderExtraGroupButtons(extra);
+        AUTH_GROUPS = [...STATIC_GROUPS, ...extra];
+        extra.forEach(g => authFetchGroup(g).catch(() => {}));
+      }catch(e){ /* নেটওয়ার্ক সমস্যা হলে চুপচাপ ignore, স্থির বাটনগুলো তো আছেই */ }
+    }
+
+    function renderExtraGroupButtons(groups){
+      const grid = document.getElementById('authCategoryGrid');
+      const addTile = document.getElementById('authAddGroupTile');
+      grid.querySelectorAll('.auth-cat-btn-dynamic').forEach(el => el.remove());
+      groups.forEach(g => {
+        const div = document.createElement('div');
+        div.className = 'auth-cat-btn auth-cat-btn-dynamic';
+        div.onclick = () => authOpenCategory(g);
+        div.innerHTML = `<i class="fa-solid fa-key"></i> ${g}`;
+        grid.insertBefore(div, addTile);
+      });
+    }
+
+    function authShowAddGroupForm(){
+      document.getElementById('authAddGroupForm').style.display = 'block';
+      document.getElementById('authAddGroupTile').style.display = 'none';
+      document.getElementById('authNewGroupName').focus();
+    }
+
+    function authHideAddGroupForm(){
+      document.getElementById('authAddGroupForm').style.display = 'none';
+      document.getElementById('authAddGroupTile').style.display = 'flex';
+      document.getElementById('authNewGroupName').value = '';
+      document.getElementById('authNewGroupAccName').value = '';
+      document.getElementById('authNewGroupSecret').value = '';
+      document.getElementById('authAddGroupError').textContent = '';
+    }
+
+    let authAddGroupInFlight = false;
+    async function authSaveNewGroup(){
+      const group = document.getElementById('authNewGroupName').value.trim();
+      const name = document.getElementById('authNewGroupAccName').value.trim();
+      const secret = document.getElementById('authNewGroupSecret').value.trim();
+      const errorEl = document.getElementById('authAddGroupError');
+      if(authAddGroupInFlight) return;
+      if(!group || !name || !secret){
+        errorEl.textContent = 'Service name, Account name এবং Secret key — সবগুলো দিতে হবে।';
+        return;
+      }
+      authAddGroupInFlight = true;
+      const saveBtn = document.querySelector('#authAddGroupForm .auth-add-save');
+      const originalLabel = saveBtn.textContent;
+      saveBtn.textContent = 'Saving...';
+      saveBtn.disabled = true;
+      errorEl.textContent = '';
+      try{
+        const res = await fetch(`${API_BASE}/totp/add`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: authToken, group, name, secret })
+        });
+        const data = await res.json().catch(() => ({}));
+        if(!res.ok) throw new Error(data.error || 'যোগ করা যায়নি।');
+
+        authHideAddGroupForm();
+        await authLoadCustomGroups();
+      }catch(err){
+        errorEl.textContent = err.message || 'নেটওয়ার্ক সমস্যা, আবার চেষ্টা করুন।';
+      }finally{
+        saveBtn.textContent = originalLabel;
+        saveBtn.disabled = false;
+        authAddGroupInFlight = false;
+      }
+    }
 
     function authFetchGroup(group){
       if(authPrefetchPromises[group]) return authPrefetchPromises[group];
