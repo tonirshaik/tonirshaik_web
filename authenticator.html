@@ -189,6 +189,35 @@
   .auth-progress-bar{ height:5px; background:var(--border); border-radius:10px; margin-top:10px; overflow:hidden; }
   .auth-progress-fill{ height:100%; background:linear-gradient(90deg,var(--gold),var(--cyan)); width:0%; transition:width 0.1s linear; }
 
+  .auth-add-btn{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:13px; margin-bottom:14px; border-radius:12px;
+    border:1px dashed var(--border-strong); color:var(--cyan);
+    font-weight:600; font-size:0.9rem; cursor:pointer;
+    transition:0.2s var(--ease);
+  }
+  .auth-add-btn:hover{ background:var(--cyan-soft); border-color:var(--cyan); }
+  .auth-add-form{
+    background:var(--surface); border:1px solid var(--border-strong);
+    border-radius:14px; padding:16px; margin-bottom:16px;
+  }
+  .auth-add-form input{
+    width:100%; padding:12px 14px; border:1px solid var(--border);
+    border-radius:10px; margin-bottom:10px; font-size:0.92rem;
+    outline:none; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif;
+  }
+  .auth-add-form input:focus{ border-color:var(--gold); box-shadow:0 0 0 4px var(--gold-soft); }
+  .auth-add-form input#authNewSecret{ font-family:var(--mono); letter-spacing:0.04em; }
+  .auth-add-actions{ display:flex; gap:10px; }
+  .auth-add-save, .auth-add-cancel{
+    flex:1; padding:11px; border-radius:10px; border:1px solid var(--border);
+    font-weight:700; font-size:0.88rem; cursor:pointer; font-family:'Inter',sans-serif;
+  }
+  .auth-add-save{ background:linear-gradient(135deg,var(--gold),var(--cyan)); color:#12100A; border:none; }
+  .auth-add-save:disabled{ opacity:0.6; cursor:default; }
+  .auth-add-cancel{ background:transparent; color:var(--text-dim); }
+  .auth-add-cancel:hover{ color:var(--text); border-color:var(--border-strong); }
+
   .auth-copy-alert{
     position:fixed; top:20px; left:50%; transform:translateX(-50%);
     background:linear-gradient(135deg,var(--gold),var(--cyan)); color:#12100A; padding:10px 26px;
@@ -232,6 +261,20 @@
 
     <div id="authListScreen" class="auth-screen">
       <div class="auth-back-btn" onclick="authShowMenu()"><i class="fa-solid fa-arrow-left"></i> Back to Menu</div>
+
+      <div id="authAddBtn" class="auth-add-btn" onclick="authShowAddForm()">
+        <i class="fa-solid fa-plus"></i> Add Account
+      </div>
+      <div id="authAddForm" class="auth-add-form" style="display:none;">
+        <input type="text" id="authNewName" placeholder="Account name (e.g. john@gmail.com)" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <input type="text" id="authNewSecret" placeholder="Secret key" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') authSaveNewAccount()">
+        <div class="auth-add-actions">
+          <button class="auth-add-save" onclick="authSaveNewAccount()">Save</button>
+          <button class="auth-add-cancel" onclick="authHideAddForm()">Cancel</button>
+        </div>
+        <div class="auth-error" id="authAddError"></div>
+      </div>
+
       <div id="authCodeContainer"></div>
     </div>
   </div>
@@ -295,6 +338,10 @@
       document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
       document.getElementById('authLockScreen').classList.add('active');
       document.getElementById('authMainTitle').textContent = '🔒 Authenticator';
+      const addForm = document.getElementById('authAddForm');
+      const addBtn = document.getElementById('authAddBtn');
+      if(addForm) addForm.style.display = 'none';
+      if(addBtn) addBtn.style.display = 'flex';
     }
 
     function authTogglePass(){
@@ -382,6 +429,7 @@
       container.innerHTML = "";
       authLastRenderedData = null;
       authProgressEls = {};
+      authHideAddForm();
 
       document.getElementById('authMenuScreen').classList.remove('active');
       document.getElementById('authListScreen').classList.add('active');
@@ -404,6 +452,58 @@
       if(!authTimerStarted){
         authTimerStarted = true;
         setInterval(authRefreshCodes, 1000);
+      }
+    }
+
+    function authShowAddForm(){
+      document.getElementById('authAddForm').style.display = 'block';
+      document.getElementById('authAddBtn').style.display = 'none';
+      document.getElementById('authNewName').focus();
+    }
+
+    function authHideAddForm(){
+      document.getElementById('authAddForm').style.display = 'none';
+      document.getElementById('authAddBtn').style.display = 'flex';
+      document.getElementById('authNewName').value = '';
+      document.getElementById('authNewSecret').value = '';
+      document.getElementById('authAddError').textContent = '';
+    }
+
+    let authAddInFlight = false;
+    async function authSaveNewAccount(){
+      const name = document.getElementById('authNewName').value.trim();
+      const secret = document.getElementById('authNewSecret').value.trim();
+      const errorEl = document.getElementById('authAddError');
+      if(authAddInFlight) return;
+      if(!name || !secret){
+        errorEl.textContent = 'নাম এবং Secret key দুটোই দিতে হবে।';
+        return;
+      }
+      authAddInFlight = true;
+      const saveBtn = document.querySelector('.auth-add-save');
+      const originalLabel = saveBtn.textContent;
+      saveBtn.textContent = 'Saving...';
+      saveBtn.disabled = true;
+      errorEl.textContent = '';
+      try{
+        const res = await fetch(`${API_BASE}/totp/add`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: authToken, group: authActiveGroup, name, secret })
+        });
+        const data = await res.json().catch(() => ({}));
+        if(!res.ok) throw new Error(data.error || 'যোগ করা যায়নি।');
+
+        delete authPrefetchCache[authActiveGroup];
+        delete authPrefetchPromises[authActiveGroup];
+        authHideAddForm();
+        await authOpenCategory(authActiveGroup);
+      }catch(err){
+        errorEl.textContent = err.message || 'নেটওয়ার্ক সমস্যা, আবার চেষ্টা করুন।';
+      }finally{
+        saveBtn.textContent = originalLabel;
+        saveBtn.disabled = false;
+        authAddInFlight = false;
       }
     }
 
