@@ -526,6 +526,62 @@
   @keyframes authFade{ from{opacity:0;} to{opacity:1;} }
   .sec-error{ color:var(--danger); font-size:0.8rem; margin-top:8px; min-height:1.1em; }
 
+  
+  .sec-menu-header{ position:relative; }
+  .sec-settings-btn{
+    position:absolute; top:-6px; right:-6px; width:34px; height:34px; border-radius:50%;
+    background:var(--surface); border:1px solid var(--border); color:var(--text-dim);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    transition:0.2s var(--ease); font-size:0.9rem;
+  }
+  .sec-settings-btn:hover{ color:var(--gold); border-color:var(--gold); background:var(--gold-soft); transform:rotate(45deg); }
+
+  .sec-btn-row{ position:relative; display:flex; align-items:stretch; gap:8px; }
+  .sec-btn-row .sec-btn{ flex:1; margin:10px 0; }
+  .sec-btn-delete{
+    flex-shrink:0; align-self:center; width:38px; height:38px; border-radius:10px;
+    background:var(--surface); border:1px solid var(--border); color:var(--text-faint);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    transition:0.2s var(--ease); font-size:0.85rem;
+  }
+  .sec-btn-delete:hover{ color:var(--danger); border-color:var(--danger); background:rgba(226,104,95,0.12); }
+
+  .sec-modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1200;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+    opacity:0; visibility:hidden; transition:opacity 0.25s ease;
+  }
+  .sec-modal-overlay.active{ opacity:1; visibility:visible; }
+  .sec-modal{
+    width:100%; max-width:360px; background:var(--surface-solid); border:1px solid var(--border-strong);
+    border-radius:18px; padding:28px 26px; box-shadow:0 24px 60px rgba(0,0,0,0.5);
+    transform:translateY(12px); transition:transform 0.25s ease;
+  }
+  .sec-modal-overlay.active .sec-modal{ transform:translateY(0); }
+  .sec-modal h3{
+    font-family:'Fraunces',serif; font-size:1.05rem; font-weight:600; margin:0 0 18px; color:var(--text);
+    text-align:center; text-transform:uppercase; letter-spacing:0.03em;
+  }
+  .sec-modal label{ display:block; font-size:0.78rem; color:var(--text-dim); margin:0 0 6px; font-family:var(--mono); }
+  .sec-modal input{
+    width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; outline:none;
+    background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; font-size:0.92rem;
+    box-sizing:border-box; margin-bottom:16px;
+  }
+  .sec-modal input:focus{ border-color:var(--gold); box-shadow:0 0 0 4px var(--gold-soft); }
+  .sec-modal-actions{ display:flex; gap:10px; margin-top:4px; }
+  .sec-modal-actions button{
+    flex:1; padding:12px; border-radius:50px; font-weight:700; cursor:pointer; font-size:0.88rem;
+    border:1px solid var(--border); background:var(--surface); color:var(--text); transition:0.2s var(--ease);
+  }
+  .sec-modal-cancel:hover{ border-color:var(--border-strong); }
+  .sec-modal-save{
+    background:linear-gradient(135deg,var(--gold),#B98F4C); color:#12100A; border:none;
+  }
+  .sec-modal-save:hover{ opacity:0.92; }
+  .sec-modal-save:disabled{ opacity:0.55; cursor:default; }
+  .sec-modal .sec-error{ text-align:center; margin-bottom:4px; }
+
 
   
   .cv-wrap{
@@ -851,8 +907,13 @@
         </div>
 
         <div id="secMainMenu" class="sec-screen">
-          <div class="sec-icon">📂</div>
-          <h2 class="sec-title">Dashboard</h2>
+          <div class="sec-menu-header">
+            <div class="sec-icon">📂</div>
+            <h2 class="sec-title">Dashboard</h2>
+            <button class="sec-settings-btn" onclick="secOpenSettings()" title="Add new service">
+              <i class="fas fa-gear"></i>
+            </button>
+          </div>
           <button class="sec-btn" onclick="secOpenLink('google')">
             <i class="fab fa-google"></i> Google Login Key
           </button>
@@ -865,6 +926,22 @@
           <button class="sec-btn" onclick="secOpenLink('mega')">
             <i class="fas fa-cloud"></i> Mega Login Key
           </button>
+          <div id="secCustomBtns"></div>
+        </div>
+      </div>
+
+      <div class="sec-modal-overlay" id="secAddModal">
+        <div class="sec-modal">
+          <h3>Add New Service</h3>
+          <label for="secNewName">Name</label>
+          <input type="text" id="secNewName" placeholder="e.g. Netflix Login Key" autocomplete="off">
+          <label for="secNewLink">Link</label>
+          <input type="text" id="secNewLink" placeholder="https://..." autocomplete="off" onkeydown="if(event.key==='Enter') secSubmitNewLink()">
+          <div class="sec-error" id="secAddError"></div>
+          <div class="sec-modal-actions">
+            <button class="sec-modal-cancel" onclick="secCloseSettings()">Cancel</button>
+            <button class="sec-modal-save" id="secAddSaveBtn" onclick="secSubmitNewLink()">Add</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1425,6 +1502,7 @@
         errorEl.textContent = '';
         document.getElementById('secAuthScreen').classList.remove('active');
         document.getElementById('secMainMenu').classList.add('active');
+        loadSecDashboard();
       }catch(err){
         errorEl.textContent = describeAuthError(err, 'login');
       }finally{
@@ -1435,6 +1513,42 @@
     }
 
     let secLinksCache = null;
+    let secCustomCache = [];
+
+    async function loadSecDashboard(){
+      try{
+        const res = await fetch(`${API_BASE}/security-links?token=${encodeURIComponent(secToken)}`);
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.error);
+        secLinksCache = data.links || {};
+        secCustomCache = data.custom || [];
+        renderSecCustomBtns();
+      }catch(e){
+        // If this fails we just fall back to lazy-loading inside secOpenLink.
+      }
+    }
+
+    function renderSecCustomBtns(){
+      const wrap = document.getElementById('secCustomBtns');
+      if(!wrap) return;
+      wrap.innerHTML = secCustomCache.map(item => `
+        <div class="sec-btn-row">
+          <button class="sec-btn" onclick="secOpenLink('custom_${item.id}')">
+            <i class="fas fa-link"></i> ${escapeHtml(item.name)}
+          </button>
+          <div class="sec-btn-delete" onclick="secDeleteCustomLink(${item.id})" title="Remove">
+            <i class="fas fa-trash"></i>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(str){
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
     async function secOpenLink(key){
       try{
         if(!secLinksCache){
@@ -1442,8 +1556,16 @@
           const data = await res.json();
           if(!res.ok) throw new Error(data.error);
           secLinksCache = data.links;
+          secCustomCache = data.custom || [];
         }
-        const link = secLinksCache[key];
+        let link;
+        if(key.startsWith('custom_')){
+          const id = Number(key.slice('custom_'.length));
+          const item = secCustomCache.find(c => c.id === id);
+          link = item && item.url;
+        } else {
+          link = secLinksCache[key];
+        }
         if(link) window.open(link, '_blank');
       }catch(e){
         alert('Your session has expired, please log in again.');
@@ -1451,9 +1573,75 @@
       }
     }
 
+    function secOpenSettings(){
+      document.getElementById('secNewName').value = '';
+      document.getElementById('secNewLink').value = '';
+      document.getElementById('secAddError').textContent = '';
+      document.getElementById('secAddModal').classList.add('active');
+    }
+
+    function secCloseSettings(){
+      document.getElementById('secAddModal').classList.remove('active');
+    }
+
+    let secAddInFlight = false;
+    async function secSubmitNewLink(){
+      const name = document.getElementById('secNewName').value.trim();
+      const link = document.getElementById('secNewLink').value.trim();
+      const errorEl = document.getElementById('secAddError');
+      const btn = document.getElementById('secAddSaveBtn');
+      if(secAddInFlight) return;
+      if(!name || !link){
+        errorEl.textContent = 'Please fill in both fields.';
+        return;
+      }
+      secAddInFlight = true;
+      const originalLabel = btn.textContent;
+      btn.textContent = 'Adding...';
+      btn.disabled = true;
+      try{
+        const res = await fetch(`${API_BASE}/security-links/add`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: secToken, name, link })
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.error || 'Could not add this service');
+        errorEl.textContent = '';
+        secCloseSettings();
+        await loadSecDashboard();
+      }catch(err){
+        errorEl.textContent = err.message || 'Something went wrong, please try again.';
+      }finally{
+        btn.textContent = originalLabel;
+        btn.disabled = false;
+        secAddInFlight = false;
+      }
+    }
+
+    async function secDeleteCustomLink(id){
+      if(!confirm('Remove this service from the Vault?')) return;
+      try{
+        const res = await fetch(`${API_BASE}/security-links/remove`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: secToken, id })
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.error);
+        await loadSecDashboard();
+      }catch(e){
+        alert('Could not remove this service, please try again.');
+      }
+    }
+
     function secLogout(){
       secToken = null;
       secLinksCache = null;
+      secCustomCache = [];
+      secCloseSettings();
+      const customWrap = document.getElementById('secCustomBtns');
+      if(customWrap) customWrap.innerHTML = '';
       document.getElementById('secPasswordField').value = "";
       document.getElementById('secPasswordField').type = "password";
       document.getElementById('secEyeIcon').classList.replace('fa-eye-slash', 'fa-eye');
