@@ -536,15 +536,48 @@
   }
   .sec-settings-btn:hover{ color:var(--gold); border-color:var(--gold); background:var(--gold-soft); transform:rotate(45deg); }
 
-  .sec-btn-row{ position:relative; display:flex; align-items:stretch; gap:8px; }
-  .sec-btn-row .sec-btn{ flex:1; margin:10px 0; }
-  .sec-btn-delete{
-    flex-shrink:0; align-self:center; width:38px; height:38px; border-radius:10px;
-    background:var(--surface); border:1px solid var(--border); color:var(--text-faint);
-    display:flex; align-items:center; justify-content:center; cursor:pointer;
-    transition:0.2s var(--ease); font-size:0.85rem;
+  .sec-swipe-row{
+    position:relative; overflow:hidden; margin:10px 0; border-radius:12px;
+    touch-action:pan-y; user-select:none;
   }
-  .sec-btn-delete:hover{ color:var(--danger); border-color:var(--danger); background:rgba(226,104,95,0.12); }
+  .sec-swipe-action{
+    position:absolute; top:0; bottom:0; width:72px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.05rem; cursor:pointer; z-index:0;
+    transition:opacity 0.2s var(--ease);
+  }
+  .sec-swipe-action-left{
+    left:0; background:rgba(76,175,80,0.18); color:#4CAF50;
+  }
+  .sec-swipe-action-left:hover{ background:rgba(76,175,80,0.28); }
+  .sec-swipe-action-right{
+    right:0; background:rgba(226,104,95,0.18); color:var(--danger);
+  }
+  .sec-swipe-action-right:hover{ background:rgba(226,104,95,0.28); }
+  .sec-swipe-content{
+    position:relative; z-index:1; width:100%;
+    background:var(--surface-solid);
+    border-radius:12px;
+    overflow:hidden;
+    transition:transform 0.25s var(--ease);
+    will-change:transform;
+  }
+  .sec-swipe-content .sec-btn{
+    margin:0; width:100%;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-left:4px solid var(--cyan);
+    border-radius:12px;
+  }
+  .sec-swipe-content .sec-btn:hover{
+    transform:none;
+    background:var(--cyan-soft);
+    border-color:var(--cyan);
+    box-shadow:0 8px 22px rgba(0,0,0,0.3);
+  }
+  .sec-swipe-row.is-dragging .sec-swipe-content .sec-btn{ pointer-events:none; }
+  .sec-swipe-row.is-open-left .sec-swipe-content{ transform:translateX(72px); }
+  .sec-swipe-row.is-open-right .sec-swipe-content{ transform:translateX(-72px); }
 
   .sec-modal-overlay{
     position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1200;
@@ -932,7 +965,7 @@
 
       <div class="sec-modal-overlay" id="secAddModal">
         <div class="sec-modal">
-          <h3>Add New Service</h3>
+          <h3 id="secModalTitle">Add New Service</h3>
           <label for="secNewName">Name</label>
           <input type="text" id="secNewName" placeholder="e.g. Netflix Login Key" autocomplete="off">
           <label for="secNewLink">Link</label>
@@ -1528,20 +1561,191 @@
       }
     }
 
+    function secCustomIcon(name, url){
+      const hay = `${name || ''} ${url || ''}`.toLowerCase();
+      if(/\byt\b|youtube|youtu\.be/.test(hay)) return 'fab fa-youtube';
+      if(/facebook|fb\./.test(hay)) return 'fab fa-facebook';
+      if(/instagram|instagr\./.test(hay)) return 'fab fa-instagram';
+      if(/google|gmail/.test(hay)) return 'fab fa-google';
+      if(/twitter|\bx\.com\b/.test(hay)) return 'fab fa-x-twitter';
+      if(/mega\.nz|mega\.co/.test(hay)) return 'fas fa-cloud';
+      if(/netflix/.test(hay)) return 'fas fa-film';
+      if(/github/.test(hay)) return 'fab fa-github';
+      if(/linkedin/.test(hay)) return 'fab fa-linkedin';
+      if(/whatsapp/.test(hay)) return 'fab fa-whatsapp';
+      if(/telegram|t\.me/.test(hay)) return 'fab fa-telegram';
+      return 'fas fa-link';
+    }
+
     function renderSecCustomBtns(){
       const wrap = document.getElementById('secCustomBtns');
       if(!wrap) return;
       wrap.innerHTML = secCustomCache.map(item => `
-        <div class="sec-btn-row">
-          <button class="sec-btn" onclick="secOpenLink('custom_${item.id}')">
-            <i class="fas fa-link"></i> ${escapeHtml(item.name)}
-          </button>
-          <div class="sec-btn-delete" onclick="secDeleteCustomLink(${item.id})" title="Remove">
+        <div class="sec-swipe-row" data-id="${item.id}">
+          <div class="sec-swipe-action sec-swipe-action-left" onclick="secOpenEditSettings(${item.id})" title="Edit">
+            <i class="fas fa-pencil"></i>
+          </div>
+          <div class="sec-swipe-action sec-swipe-action-right" onclick="secDeleteCustomLink(${item.id})" title="Remove">
             <i class="fas fa-trash"></i>
+          </div>
+          <div class="sec-swipe-content">
+            <button type="button" class="sec-btn sec-swipe-open-btn" data-link-key="custom_${item.id}">
+              <i class="${secCustomIcon(item.name, item.url)}"></i> ${escapeHtml(item.name)}
+            </button>
           </div>
         </div>
       `).join('');
+      initSecSwipeRows();
     }
+
+    const SEC_SWIPE_WIDTH = 72;
+
+    function secCloseAllSwipeRows(){
+      document.querySelectorAll('.sec-swipe-row').forEach(row => {
+        row.classList.remove('is-open-left', 'is-open-right', 'is-dragging');
+        const content = row.querySelector('.sec-swipe-content');
+        if(content){
+          content.style.transition = '';
+          content.style.transform = '';
+        }
+      });
+    }
+
+    function initSecSwipeRows(){
+      document.querySelectorAll('.sec-swipe-row').forEach(row => {
+        if(row.dataset.swipeReady) return;
+        row.dataset.swipeReady = '1';
+
+        const content = row.querySelector('.sec-swipe-content');
+        const btn = row.querySelector('.sec-swipe-open-btn');
+        if(!content || !btn) return;
+
+        let startX = 0, startY = 0, startOffset = 0, dragging = false, axisLocked = null;
+        let blockClickUntil = 0;
+
+        function blockLinkClick(){
+          blockClickUntil = Date.now() + 450;
+        }
+
+        btn.addEventListener('click', (e) => {
+          if(Date.now() < blockClickUntil){
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+          if(row.classList.contains('is-open-left') || row.classList.contains('is-open-right')){
+            e.preventDefault();
+            secCloseAllSwipeRows();
+            return;
+          }
+          secOpenLink(btn.dataset.linkKey);
+        });
+
+        function getOffset(){
+          if(row.classList.contains('is-open-left')) return SEC_SWIPE_WIDTH;
+          if(row.classList.contains('is-open-right')) return -SEC_SWIPE_WIDTH;
+          return 0;
+        }
+
+        function applyOffset(x, animate){
+          const clamped = Math.max(-SEC_SWIPE_WIDTH, Math.min(SEC_SWIPE_WIDTH, x));
+          content.style.transition = animate ? 'transform 0.25s var(--ease)' : 'none';
+          content.style.transform = clamped ? `translateX(${clamped}px)` : '';
+          return clamped;
+        }
+
+        function snap(offset){
+          row.classList.remove('is-open-left', 'is-open-right');
+          content.style.transition = 'transform 0.25s var(--ease)';
+          if(offset > SEC_SWIPE_WIDTH * 0.35){
+            row.classList.add('is-open-left');
+            content.style.transform = `translateX(${SEC_SWIPE_WIDTH}px)`;
+          } else if(offset < -SEC_SWIPE_WIDTH * 0.35){
+            row.classList.add('is-open-right');
+            content.style.transform = `translateX(-${SEC_SWIPE_WIDTH}px)`;
+          } else {
+            content.style.transform = '';
+          }
+        }
+
+        function onStart(clientX, clientY){
+          startX = clientX;
+          startY = clientY;
+          startOffset = getOffset();
+          dragging = true;
+          axisLocked = null;
+          row.classList.remove('is-dragging');
+          content.style.transition = 'none';
+          document.querySelectorAll('.sec-swipe-row').forEach(other => {
+            if(other !== row) other.classList.remove('is-open-left', 'is-open-right', 'is-dragging');
+          });
+        }
+
+        function onMove(clientX, clientY){
+          if(!dragging) return;
+          const dx = clientX - startX;
+          const dy = clientY - startY;
+          if(axisLocked === null){
+            if(Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+            axisLocked = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+          }
+          if(axisLocked !== 'x') return;
+          if(Math.abs(dx) > 8) row.classList.add('is-dragging');
+          applyOffset(startOffset + dx, false);
+        }
+
+        function onEnd(clientX){
+          if(!dragging) return;
+          dragging = false;
+          row.classList.remove('is-dragging');
+          if(axisLocked !== 'x'){
+            content.style.transition = 'transform 0.25s var(--ease)';
+            content.style.transform = getOffset() ? `translateX(${getOffset()}px)` : '';
+            return;
+          }
+          const dx = clientX - startX;
+          if(Math.abs(dx) > 8) blockLinkClick();
+          snap(startOffset + dx);
+          if(row.classList.contains('is-open-left') || row.classList.contains('is-open-right')){
+            blockLinkClick();
+          }
+        }
+
+        content.addEventListener('touchstart', (e) => {
+          const t = e.touches[0];
+          onStart(t.clientX, t.clientY);
+        }, { passive:true });
+
+        content.addEventListener('touchmove', (e) => {
+          const t = e.touches[0];
+          if(axisLocked === 'x') e.preventDefault();
+          onMove(t.clientX, t.clientY);
+        }, { passive:false });
+
+        content.addEventListener('touchend', (e) => {
+          const t = e.changedTouches[0];
+          onEnd(t.clientX);
+        });
+
+        content.addEventListener('mousedown', (e) => {
+          if(e.button !== 0 || e.target.closest('.sec-swipe-action')) return;
+          e.preventDefault();
+          onStart(e.clientX, e.clientY);
+          const onMouseMove = (ev) => onMove(ev.clientX, ev.clientY);
+          const onMouseUp = (ev) => {
+            onEnd(ev.clientX);
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+          };
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('mouseup', onMouseUp);
+        });
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      if(!e.target.closest('.sec-swipe-row')) secCloseAllSwipeRows();
+    });
 
     function escapeHtml(str){
       const div = document.createElement('div');
@@ -1573,14 +1777,33 @@
       }
     }
 
+    let secEditId = null;
+
     function secOpenSettings(){
+      secEditId = null;
+      document.getElementById('secModalTitle').textContent = 'Add New Service';
+      document.getElementById('secAddSaveBtn').textContent = 'Add';
       document.getElementById('secNewName').value = '';
       document.getElementById('secNewLink').value = '';
       document.getElementById('secAddError').textContent = '';
       document.getElementById('secAddModal').classList.add('active');
     }
 
+    function secOpenEditSettings(id){
+      const item = secCustomCache.find(c => c.id === id);
+      if(!item) return;
+      secCloseAllSwipeRows();
+      secEditId = id;
+      document.getElementById('secModalTitle').textContent = 'Edit Service';
+      document.getElementById('secAddSaveBtn').textContent = 'Save';
+      document.getElementById('secNewName').value = item.name;
+      document.getElementById('secNewLink').value = item.url;
+      document.getElementById('secAddError').textContent = '';
+      document.getElementById('secAddModal').classList.add('active');
+    }
+
     function secCloseSettings(){
+      secEditId = null;
       document.getElementById('secAddModal').classList.remove('active');
     }
 
@@ -1590,6 +1813,7 @@
       const link = document.getElementById('secNewLink').value.trim();
       const errorEl = document.getElementById('secAddError');
       const btn = document.getElementById('secAddSaveBtn');
+      const isEdit = secEditId !== null;
       if(secAddInFlight) return;
       if(!name || !link){
         errorEl.textContent = 'Please fill in both fields.';
@@ -1597,16 +1821,20 @@
       }
       secAddInFlight = true;
       const originalLabel = btn.textContent;
-      btn.textContent = 'Adding...';
+      btn.textContent = isEdit ? 'Saving...' : 'Adding...';
       btn.disabled = true;
       try{
-        const res = await fetch(`${API_BASE}/security-links/add`, {
+        const endpoint = isEdit ? 'security-links/update' : 'security-links/add';
+        const payload = isEdit
+          ? { token: secToken, id: secEditId, name, link }
+          : { token: secToken, name, link };
+        const res = await fetch(`${API_BASE}/${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: secToken, name, link })
+          body: JSON.stringify(payload)
         });
         const data = await res.json();
-        if(!res.ok) throw new Error(data.error || 'Could not add this service');
+        if(!res.ok) throw new Error(data.error || (isEdit ? 'Could not update this service' : 'Could not add this service'));
         errorEl.textContent = '';
         secCloseSettings();
         await loadSecDashboard();
@@ -1620,6 +1848,7 @@
     }
 
     async function secDeleteCustomLink(id){
+      secCloseAllSwipeRows();
       if(!confirm('Remove this service from the Vault?')) return;
       try{
         const res = await fetch(`${API_BASE}/security-links/remove`, {
@@ -1639,6 +1868,7 @@
       secToken = null;
       secLinksCache = null;
       secCustomCache = [];
+      secEditId = null;
       secCloseSettings();
       const customWrap = document.getElementById('secCustomBtns');
       if(customWrap) customWrap.innerHTML = '';
