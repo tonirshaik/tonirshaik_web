@@ -1188,13 +1188,13 @@
     
     function describeAuthError(err, stage){
       if(err.isNetworkError){
-        return 'নেটওয়ার্ক সমস্যা — সার্ভারে পৌঁছানো যাচ্ছে না (WiFi/DNS চেক করুন)';
+        return 'Network error — could not reach the server (check WiFi/DNS)';
       }
       if(err.status === 429){
-        return err.serverMessage || 'অনেকবার চেষ্টা হয়েছে, একটু পর আবার চেষ্টা করুন।';
+        return err.serverMessage || 'Too many attempts, please try again in a moment.';
       }
       if(stage === 'document'){
-        return (err.serverMessage || 'লিংক পাওয়া যায়নি') + ' — Worker-এ এই ডকুমেন্টের LINK ভ্যারিয়েবল সেট করা আছে কিনা চেক করুন।';
+        return (err.serverMessage || 'Link not found') + ' — check whether the LINK variable for this document is set in the Worker.';
       }
       return 'Incorrect password';
     }
