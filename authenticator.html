@@ -238,6 +238,60 @@
   @media (prefers-reduced-motion: reduce){
     .auth-submit, .auth-submit:hover{ animation:none !important; }
   }
+
+  /* ---------- Settings gear button ---------- */
+  .auth-settings-btn{
+    position:absolute; top:16px; right:18px; width:34px; height:34px;
+    border-radius:10px; border:1px solid var(--border); background:var(--surface);
+    color:var(--text-dim); cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-size:0.95rem; transition:0.2s var(--ease); z-index:6;
+  }
+  .auth-settings-btn:hover{ color:var(--cyan); border-color:var(--cyan); background:var(--cyan-soft); transform:rotate(35deg); }
+
+  /* ---------- Modal overlay (settings / confirm password / edit account) ---------- */
+  .auth-modal-overlay{
+    position:fixed; inset:0; background:rgba(6,8,12,0.68); backdrop-filter:blur(2px);
+    display:none; align-items:center; justify-content:center; z-index:2000; padding:20px;
+  }
+  .auth-modal-box{
+    width:100%; max-width:360px; background:var(--surface-solid); border:1px solid var(--border-strong);
+    border-radius:16px; padding:20px; box-shadow:0 20px 50px rgba(0,0,0,0.5);
+  }
+  .auth-modal-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .auth-modal-header h3{ margin:0; font-family:'Fraunces',serif; font-size:1.08rem; font-weight:600; }
+  .auth-modal-close{ cursor:pointer; color:var(--text-dim); font-size:1rem; padding:4px; }
+  .auth-modal-close:hover{ color:var(--text); }
+  .auth-settings-section-title{
+    font-family:var(--mono); font-size:0.7rem; color:var(--text-dim); text-transform:uppercase;
+    letter-spacing:0.06em; margin-bottom:10px;
+  }
+  .auth-confirm-text{ font-size:0.9rem; color:var(--text-dim); margin-bottom:14px; text-align:center; }
+
+  /* ---------- Swipe-to-reveal (dashboard buttons + account boxes) ---------- */
+  .swipe-item{ position:relative; overflow:hidden; border-radius:14px; }
+  .swipe-actions{
+    position:absolute; top:0; bottom:0; display:flex; align-items:stretch; z-index:1;
+  }
+  .swipe-actions-left{ left:0; }
+  .swipe-actions-right{ right:0; }
+  .swipe-action-btn{
+    border:none; cursor:pointer; color:#fff; font-size:1.05rem;
+    display:flex; align-items:center; justify-content:center;
+    width:64px; height:100%;
+  }
+  .swipe-delete-btn{ background:var(--danger); border-radius:0 14px 14px 0; }
+  .swipe-edit-btn{ background:#4CAF63; border-radius:14px 0 0 14px; }
+  .swipe-content{
+    position:relative; z-index:2; transform:translateX(0); touch-action:pan-y;
+    will-change:transform;
+  }
+
+  /* cat-btn swipe wrapper sits inside the grid cell */
+  .auth-category-grid .swipe-item{ min-width:0; }
+  .auth-category-grid .swipe-item .swipe-content.auth-cat-btn{ margin:0; background:var(--surface-solid); }
+
+  .acc-swipe-item{ margin-bottom:12px; }
+  .acc-swipe-item .swipe-content.auth-account-box{ margin-bottom:0; background:var(--surface-solid); }
 </style>
 </head>
 <body>
@@ -257,27 +311,99 @@
     </div>
 
     <div id="authMenuScreen" class="auth-screen">
-      <div class="auth-category-grid" id="authCategoryGrid">
-        <div class="auth-cat-btn" onclick="authOpenCategory('Gmail')"><i class="fa-solid fa-envelope"></i> Gmail</div>
-        <div class="auth-cat-btn" onclick="authOpenCategory('Facebook')"><i class="fa-brands fa-facebook"></i> Facebook</div>
-        <div class="auth-cat-btn" onclick="authOpenCategory('Instagram')"><i class="fa-brands fa-instagram"></i> Instagram</div>
-        <div class="auth-cat-btn" onclick="authOpenCategory('TikTok')"><i class="fa-brands fa-tiktok"></i> TikTok</div>
-        <div class="auth-cat-btn" onclick="authOpenCategory('Mega')"><i class="fa-solid fa-cloud"></i> Mega</div>
-        <div class="auth-cat-btn" onclick="authOpenCategory('linkedin')"><i class="fa-brands fa-linkedin"></i> LinkedIn</div>
-        <div class="auth-cat-btn" onclick="authOpenCategory('Telegram')"><i class="fa-brands fa-telegram"></i> Telegram</div>
-        <div class="auth-cat-btn" onclick="authOpenCategory('Binance')"><i class="fa-brands fa-btc"></i> Binance</div>
-        <div class="auth-cat-btn auth-add-tile" id="authAddGroupTile" onclick="authShowAddGroupForm()"><i class="fa-solid fa-plus"></i> Add Service</div>
-      </div>
+      <button type="button" class="auth-settings-btn" id="authSettingsBtn" onclick="authOpenSettingsModal()" title="Settings"><i class="fa-solid fa-gear"></i></button>
 
-      <div id="authAddGroupForm" style="display:none;">
-        <input type="text" id="authNewGroupName" placeholder="Service name (e.g. Netflix)" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; font-size:0.92rem; outline:none; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; box-sizing:border-box;">
-        <input type="text" id="authNewGroupAccName" placeholder="Account name (e.g. you@example.com)" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; font-size:0.92rem; outline:none; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; box-sizing:border-box;">
-        <input type="text" id="authNewGroupSecret" placeholder="Secret key" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') authSaveNewGroup()" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; font-size:0.92rem; outline:none; background:var(--bg); color:var(--text); font-family:var(--mono); letter-spacing:0.04em; box-sizing:border-box;">
-        <div class="auth-add-actions">
-          <button class="auth-add-save" onclick="authSaveNewGroup()">Save</button>
-          <button class="auth-add-cancel" onclick="authHideAddGroupForm()">Cancel</button>
+      <div class="auth-category-grid" id="authCategoryGrid">
+        <div class="swipe-item" data-group="Gmail">
+          <div class="swipe-actions swipe-actions-right"><button class="swipe-action-btn swipe-delete-btn" onclick="authRequestDeleteGroup('Gmail', this)"><i class="fa-solid fa-trash"></i></button></div>
+          <div class="auth-cat-btn swipe-content" onclick="authOpenCategory('Gmail')"><i class="fa-solid fa-envelope"></i> Gmail</div>
         </div>
-        <div class="auth-error" id="authAddGroupError"></div>
+        <div class="swipe-item" data-group="Facebook">
+          <div class="swipe-actions swipe-actions-right"><button class="swipe-action-btn swipe-delete-btn" onclick="authRequestDeleteGroup('Facebook', this)"><i class="fa-solid fa-trash"></i></button></div>
+          <div class="auth-cat-btn swipe-content" onclick="authOpenCategory('Facebook')"><i class="fa-brands fa-facebook"></i> Facebook</div>
+        </div>
+        <div class="swipe-item" data-group="Instagram">
+          <div class="swipe-actions swipe-actions-right"><button class="swipe-action-btn swipe-delete-btn" onclick="authRequestDeleteGroup('Instagram', this)"><i class="fa-solid fa-trash"></i></button></div>
+          <div class="auth-cat-btn swipe-content" onclick="authOpenCategory('Instagram')"><i class="fa-brands fa-instagram"></i> Instagram</div>
+        </div>
+        <div class="swipe-item" data-group="TikTok">
+          <div class="swipe-actions swipe-actions-right"><button class="swipe-action-btn swipe-delete-btn" onclick="authRequestDeleteGroup('TikTok', this)"><i class="fa-solid fa-trash"></i></button></div>
+          <div class="auth-cat-btn swipe-content" onclick="authOpenCategory('TikTok')"><i class="fa-brands fa-tiktok"></i> TikTok</div>
+        </div>
+        <div class="swipe-item" data-group="Mega">
+          <div class="swipe-actions swipe-actions-right"><button class="swipe-action-btn swipe-delete-btn" onclick="authRequestDeleteGroup('Mega', this)"><i class="fa-solid fa-trash"></i></button></div>
+          <div class="auth-cat-btn swipe-content" onclick="authOpenCategory('Mega')"><i class="fa-solid fa-cloud"></i> Mega</div>
+        </div>
+        <div class="swipe-item" data-group="linkedin">
+          <div class="swipe-actions swipe-actions-right"><button class="swipe-action-btn swipe-delete-btn" onclick="authRequestDeleteGroup('linkedin', this)"><i class="fa-solid fa-trash"></i></button></div>
+          <div class="auth-cat-btn swipe-content" onclick="authOpenCategory('linkedin')"><i class="fa-brands fa-linkedin"></i> LinkedIn</div>
+        </div>
+        <div class="swipe-item" data-group="Telegram">
+          <div class="swipe-actions swipe-actions-right"><button class="swipe-action-btn swipe-delete-btn" onclick="authRequestDeleteGroup('Telegram', this)"><i class="fa-solid fa-trash"></i></button></div>
+          <div class="auth-cat-btn swipe-content" onclick="authOpenCategory('Telegram')"><i class="fa-brands fa-telegram"></i> Telegram</div>
+        </div>
+        <div class="swipe-item" data-group="Binance">
+          <div class="swipe-actions swipe-actions-right"><button class="swipe-action-btn swipe-delete-btn" onclick="authRequestDeleteGroup('Binance', this)"><i class="fa-solid fa-trash"></i></button></div>
+          <div class="auth-cat-btn swipe-content" onclick="authOpenCategory('Binance')"><i class="fa-brands fa-btc"></i> Binance</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- Settings modal (holds "Add Service") ---------- -->
+    <div id="authSettingsModal" class="auth-modal-overlay">
+      <div class="auth-modal-box">
+        <div class="auth-modal-header">
+          <h3>⚙️ Settings</h3>
+          <span class="auth-modal-close" onclick="authCloseSettingsModal()"><i class="fa-solid fa-xmark"></i></span>
+        </div>
+        <div class="auth-settings-section-title">Add a new service</div>
+        <div id="authAddGroupForm">
+          <input type="text" id="authNewGroupName" placeholder="Service name (e.g. Netflix)" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; font-size:0.92rem; outline:none; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; box-sizing:border-box;">
+          <input type="text" id="authNewGroupAccName" placeholder="Account name (e.g. you@example.com)" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; font-size:0.92rem; outline:none; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; box-sizing:border-box;">
+          <input type="text" id="authNewGroupSecret" placeholder="Secret key" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') authSaveNewGroup()" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; font-size:0.92rem; outline:none; background:var(--bg); color:var(--text); font-family:var(--mono); letter-spacing:0.04em; box-sizing:border-box;">
+          <div class="auth-add-actions">
+            <button class="auth-add-save" onclick="authSaveNewGroup()">Save</button>
+            <button class="auth-add-cancel" onclick="authCloseSettingsModal()">Cancel</button>
+          </div>
+          <div class="auth-error" id="authAddGroupError"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- Password confirm modal (used for all deletes) ---------- -->
+    <div id="authPassConfirmModal" class="auth-modal-overlay">
+      <div class="auth-modal-box">
+        <div class="auth-modal-header">
+          <h3 id="authPassConfirmTitle">Confirm delete</h3>
+          <span class="auth-modal-close" onclick="authCloseConfirmModal()"><i class="fa-solid fa-xmark"></i></span>
+        </div>
+        <div class="auth-pass-wrap">
+          <input type="password" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" id="authPassConfirmInput" placeholder="Password" onkeydown="if(event.key==='Enter') authConfirmPassAction()">
+        </div>
+        <div class="auth-error" id="authPassConfirmError"></div>
+        <div class="auth-add-actions">
+          <button class="auth-add-save" onclick="authConfirmPassAction()">Delete</button>
+          <button class="auth-add-cancel" onclick="authCloseConfirmModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- Edit account modal ---------- -->
+    <div id="authEditModal" class="auth-modal-overlay">
+      <div class="auth-modal-box">
+        <div class="auth-modal-header">
+          <h3>Edit account</h3>
+          <span class="auth-modal-close" onclick="authCloseEditModal()"><i class="fa-solid fa-xmark"></i></span>
+        </div>
+        <input type="hidden" id="authEditOldGroup">
+        <input type="hidden" id="authEditOldName">
+        <input type="text" id="authEditName" placeholder="Account name" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; font-size:0.92rem; outline:none; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; box-sizing:border-box;">
+        <input type="text" id="authEditSecret" placeholder="Secret key (re-enter to update)" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') authSaveEditAccount()" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; font-size:0.92rem; outline:none; background:var(--bg); color:var(--text); font-family:var(--mono); letter-spacing:0.04em; box-sizing:border-box;">
+        <div class="auth-add-actions">
+          <button class="auth-add-save" onclick="authSaveEditAccount()">Save</button>
+          <button class="auth-add-cancel" onclick="authCloseEditModal()">Cancel</button>
+        </div>
+        <div class="auth-error" id="authEditError"></div>
       </div>
     </div>
 
@@ -329,10 +455,10 @@
 
     function describeAuthError(err, stage){
       if(err.isNetworkError){
-        return 'নেটওয়ার্ক সমস্যা — সার্ভারে পৌঁছানো যাচ্ছে না (WiFi/DNS চেক করুন)';
+        return 'Network error — could not reach the server (check WiFi/DNS)';
       }
       if(err.status === 429){
-        return err.serverMessage || 'অনেকবার চেষ্টা হয়েছে, একটু পর আবার চেষ্টা করুন।';
+        return err.serverMessage || 'Too many attempts, please try again in a moment.';
       }
       return 'Incorrect password';
     }
@@ -343,6 +469,256 @@
     let authLastRenderedData = null;
     let authProgressEls = {};
     let authProgressTimer = null;
+
+    function escapeHtml(str){
+      const div = document.createElement('div');
+      div.textContent = String(str);
+      return div.innerHTML;
+    }
+
+    // ---------- Hidden (deleted) service buttons, persisted locally ----------
+    let authHiddenGroups = [];
+    try{ authHiddenGroups = JSON.parse(localStorage.getItem('authHiddenGroups') || '[]'); }catch(e){ authHiddenGroups = []; }
+    function saveHiddenGroups(){
+      try{ localStorage.setItem('authHiddenGroups', JSON.stringify(authHiddenGroups)); }catch(e){}
+    }
+    function applyHiddenGroupsToStaticGrid(){
+      document.querySelectorAll('#authCategoryGrid > .swipe-item[data-group]').forEach(item => {
+        const g = item.getAttribute('data-group');
+        item.style.display = authHiddenGroups.includes(g) ? 'none' : '';
+      });
+      AUTH_GROUPS = AUTH_GROUPS.filter(g => !authHiddenGroups.includes(g));
+    }
+
+    // ---------- Generic swipe-to-reveal engine (mouse + touch via Pointer Events) ----------
+    let swipeJustDragged = false;
+    let openSwipeItems = [];
+
+    function authCloseAllSwipes(){
+      openSwipeItems.forEach(el => { el.style.transition = 'transform .25s var(--ease)'; el.style.transform = 'translateX(0px)'; });
+      openSwipeItems = [];
+    }
+
+    function makeSwipeable(item, opts){
+      const content = item.querySelector('.swipe-content');
+      if(!content) return;
+      const maxLeft = opts.rightWidth || 0;   // dragging content left reveals the RIGHT action panel
+      const maxRight = opts.leftWidth || 0;   // dragging content right reveals the LEFT action panel
+      let startX = 0, startY = 0, baseX = 0, dragging = false, moved = false, axis = null;
+
+      function getX(){
+        const m = /translateX\((-?\d+(?:\.\d+)?)px\)/.exec(content.style.transform);
+        return m ? parseFloat(m[1]) : 0;
+      }
+      function setX(x){ content.style.transform = `translateX(${x}px)`; }
+
+      function onDown(e){
+        if(e.button !== undefined && e.button !== 0) return;
+        const pt = e.touches ? e.touches[0] : e;
+        startX = pt.clientX; startY = pt.clientY; baseX = getX();
+        dragging = true; moved = false; axis = null;
+        content.style.transition = 'none';
+      }
+      function onMove(e){
+        if(!dragging) return;
+        const pt = e.touches ? e.touches[0] : e;
+        const dx = pt.clientX - startX;
+        const dy = pt.clientY - startY;
+        if(axis === null){
+          if(Math.abs(dx) > 6 || Math.abs(dy) > 6) axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+        }
+        if(axis === 'y') return;
+        if(Math.abs(dx) > 4) moved = true;
+        if(e.cancelable) e.preventDefault();
+        let next = baseX + dx;
+        if(next < -maxLeft) next = -maxLeft;
+        if(next > maxRight) next = maxRight;
+        setX(next);
+      }
+      function onUp(){
+        if(!dragging) return;
+        dragging = false;
+        content.style.transition = 'transform .25s var(--ease)';
+        const x = getX();
+        let target = 0;
+        if(maxLeft > 0 && x <= -maxLeft / 2) target = -maxLeft;
+        else if(maxRight > 0 && x >= maxRight / 2) target = maxRight;
+        setX(target);
+        if(target !== 0){
+          openSwipeItems.filter(el => el !== content).forEach(el => { el.style.transition = 'transform .25s var(--ease)'; el.style.transform = 'translateX(0px)'; });
+          openSwipeItems = [content];
+        }else{
+          openSwipeItems = openSwipeItems.filter(el => el !== content);
+        }
+        if(moved){
+          swipeJustDragged = true;
+          setTimeout(() => { swipeJustDragged = false; }, 80);
+        }
+      }
+      content.addEventListener('pointerdown', onDown);
+      content.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+      content.addEventListener('pointercancel', onUp);
+    }
+
+    // Auto-close any open swipe item when the user taps/clicks somewhere
+    // that isn't part of that open item (e.g. another card, blank space, etc).
+    document.addEventListener('pointerdown', (e) => {
+      if(openSwipeItems.length === 0) return;
+      const stillInside = openSwipeItems.some(content => {
+        const wrapper = content.closest('.swipe-item');
+        return wrapper && wrapper.contains(e.target);
+      });
+      if(!stillInside) authCloseAllSwipes();
+    }, true);
+
+    // ---------- Password confirm modal (used for every delete action) ----------
+    let authPendingDeleteAction = null;
+    function authOpenConfirmModal(title, action){
+      authPendingDeleteAction = action;
+      document.getElementById('authPassConfirmTitle').textContent = title;
+      const input = document.getElementById('authPassConfirmInput');
+      input.value = '';
+      document.getElementById('authPassConfirmError').textContent = '';
+      document.getElementById('authPassConfirmModal').style.display = 'flex';
+      setTimeout(() => input.focus(), 50);
+    }
+    function authCloseConfirmModal(){
+      const modal = document.getElementById('authPassConfirmModal');
+      if(modal) modal.style.display = 'none';
+      authPendingDeleteAction = null;
+    }
+    let authConfirmInFlight = false;
+    async function authConfirmPassAction(){
+      const input = document.getElementById('authPassConfirmInput');
+      const val = input.value.trim();
+      const errorEl = document.getElementById('authPassConfirmError');
+      if(!val || authConfirmInFlight) return;
+      authConfirmInFlight = true;
+      const btn = document.querySelector('#authPassConfirmModal .auth-add-save');
+      const originalLabel = btn.textContent;
+      btn.textContent = 'Checking...';
+      btn.disabled = true;
+      errorEl.textContent = '';
+      try{
+        // Verify against the real vault password on the server (same
+        // check used to unlock the authenticator) — no hardcoded secret.
+        await apiLogin('totp', val);
+        const action = authPendingDeleteAction;
+        authCloseConfirmModal();
+        if(action) action();
+      }catch(err){
+        errorEl.textContent = describeAuthError(err, 'login');
+      }finally{
+        btn.textContent = originalLabel;
+        btn.disabled = false;
+        authConfirmInFlight = false;
+      }
+    }
+
+    // ---------- Delete an entire service button from the dashboard ----------
+    function authRequestDeleteGroup(group, btnEl){
+      authOpenConfirmModal(`Delete "${group}"?`, () => authDeleteGroup(group));
+    }
+    async function authDeleteGroup(group){
+      const item = document.querySelector(`#authCategoryGrid .swipe-item[data-group="${CSS.escape(group)}"]`);
+      if(item){
+        if(STATIC_GROUPS.some(s => s.toLowerCase() === group.toLowerCase())){
+          item.style.display = 'none';
+        }else{
+          item.remove();
+        }
+      }
+      if(!authHiddenGroups.includes(group)){
+        authHiddenGroups.push(group);
+        saveHiddenGroups();
+      }
+      AUTH_GROUPS = AUTH_GROUPS.filter(g => g !== group);
+
+      // best-effort: also remove any custom accounts under this group on the server
+      try{
+        const entry = authPrefetchCache[group] || await authFetchGroup(group).catch(() => null);
+        if(entry && entry.data && Array.isArray(entry.data.accounts)){
+          entry.data.accounts.forEach(acc => {
+            fetch(`${API_BASE}/totp/remove`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: authToken, group, name: acc.name })
+            }).catch(() => {});
+          });
+        }
+      }catch(e){ /* ignore */ }
+      delete authPrefetchCache[group];
+      delete authPrefetchPromises[group];
+    }
+
+    // ---------- Edit an individual account ----------
+    function authOpenEditAccountForm(group, oldName){
+      document.getElementById('authEditOldGroup').value = group;
+      document.getElementById('authEditOldName').value = oldName;
+      document.getElementById('authEditName').value = oldName;
+      document.getElementById('authEditSecret').value = '';
+      document.getElementById('authEditError').textContent = '';
+      document.getElementById('authEditModal').style.display = 'flex';
+      setTimeout(() => document.getElementById('authEditName').focus(), 50);
+    }
+    function authCloseEditModal(){
+      const modal = document.getElementById('authEditModal');
+      if(modal) modal.style.display = 'none';
+    }
+    let authEditInFlight = false;
+    async function authSaveEditAccount(){
+      const group = document.getElementById('authEditOldGroup').value;
+      const oldName = document.getElementById('authEditOldName').value;
+      const newName = document.getElementById('authEditName').value.trim();
+      const newSecret = document.getElementById('authEditSecret').value.trim();
+      const errorEl = document.getElementById('authEditError');
+      if(authEditInFlight) return;
+      if(!newName || !newSecret){
+        errorEl.textContent = 'Both name and Secret key are required.';
+        return;
+      }
+      authEditInFlight = true;
+      const saveBtn = document.querySelector('#authEditModal .auth-add-save');
+      const original = saveBtn.textContent;
+      saveBtn.textContent = 'Saving...';
+      saveBtn.disabled = true;
+      errorEl.textContent = '';
+      try{
+        const editRes = await fetch(`${API_BASE}/totp/edit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: authToken, group, oldName, newName, secret: newSecret })
+        });
+        const editData = await editRes.json().catch(() => ({}));
+        if(!editRes.ok) throw new Error(editData.error || 'Could not save.');
+
+        delete authPrefetchCache[group];
+        delete authPrefetchPromises[group];
+        authCloseEditModal();
+        await authOpenCategory(group);
+      }catch(err){
+        errorEl.textContent = err.message || 'Network error, please try again.';
+      }finally{
+        saveBtn.textContent = original;
+        saveBtn.disabled = false;
+        authEditInFlight = false;
+      }
+    }
+
+    // ---------- Delete an individual account ----------
+    async function authDeleteAccount(group, name){
+      try{
+        await fetch(`${API_BASE}/totp/remove`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: authToken, group, name })
+        });
+      }catch(e){ /* ignore */ }
+      delete authPrefetchCache[group];
+      delete authPrefetchPromises[group];
+      if(authActiveGroup === group) await authOpenCategory(group);
+    }
 
     function resetAuthLock(){
       authToken = null;
@@ -364,11 +740,12 @@
       const addBtn = document.getElementById('authAddBtn');
       if(addForm) addForm.style.display = 'none';
       if(addBtn) addBtn.style.display = 'flex';
-      const addGroupForm = document.getElementById('authAddGroupForm');
-      const addGroupTile = document.getElementById('authAddGroupTile');
-      if(addGroupForm) addGroupForm.style.display = 'none';
-      if(addGroupTile) addGroupTile.style.display = 'flex';
-      document.querySelectorAll('.auth-cat-btn-dynamic').forEach(el => el.remove());
+      authCloseSettingsModal();
+      authCloseConfirmModal();
+      authCloseEditModal();
+      document.querySelectorAll('.auth-cat-btn-dynamic').forEach(el => el.parentElement.remove());
+      applyHiddenGroupsToStaticGrid();
+      authCloseAllSwipes();
     }
 
     function authTogglePass(){
@@ -422,6 +799,7 @@
       document.getElementById('authMainTitle').textContent = "🔒 Authenticator";
       document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
       document.getElementById('authMenuScreen').classList.add('active');
+      applyHiddenGroupsToStaticGrid();
       authLoadCustomGroups();
     }
 
@@ -430,7 +808,7 @@
     let authPrefetchCache = {};
     let authPrefetchPromises = {};
 
-    // ---------- কাস্টম (ইউজারের নিজের বানানো) সার্ভিস বাটনগুলো লোড ও রেন্ডার ----------
+    // ---------- Load and render custom (user-created) service buttons ----------
     async function authLoadCustomGroups(){
       if(!authToken) return;
       try{
@@ -443,35 +821,52 @@
         renderExtraGroupButtons(extra);
         AUTH_GROUPS = [...STATIC_GROUPS, ...extra];
         extra.forEach(g => authFetchGroup(g).catch(() => {}));
-      }catch(e){ /* নেটওয়ার্ক সমস্যা হলে চুপচাপ ignore, স্থির বাটনগুলো তো আছেই */ }
+      }catch(e){ /* silently ignore network errors, static buttons still exist */ }
     }
 
     function renderExtraGroupButtons(groups){
       const grid = document.getElementById('authCategoryGrid');
-      const addTile = document.getElementById('authAddGroupTile');
-      grid.querySelectorAll('.auth-cat-btn-dynamic').forEach(el => el.remove());
-      groups.forEach(g => {
-        const div = document.createElement('div');
-        div.className = 'auth-cat-btn auth-cat-btn-dynamic';
-        div.onclick = () => authOpenCategory(g);
-        div.innerHTML = `<i class="fa-solid fa-key"></i> ${g}`;
-        grid.insertBefore(div, addTile);
-      });
+      grid.querySelectorAll('.auth-cat-btn-dynamic').forEach(el => el.parentElement.remove());
+      groups
+        .filter(g => !authHiddenGroups.includes(g))
+        .forEach(g => {
+          const item = document.createElement('div');
+          item.className = 'swipe-item';
+          item.setAttribute('data-group', g);
+          item.innerHTML = `
+            <div class="swipe-actions swipe-actions-right">
+              <button class="swipe-action-btn swipe-delete-btn"><i class="fa-solid fa-trash"></i></button>
+            </div>
+            <div class="auth-cat-btn auth-cat-btn-dynamic swipe-content"><i class="fa-solid fa-key"></i> ${escapeHtml(g)}</div>`;
+          item.querySelector('.swipe-content').addEventListener('click', () => {
+            if(swipeJustDragged) return;
+            authOpenCategory(g);
+          });
+          item.querySelector('.swipe-delete-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            authRequestDeleteGroup(g, e.currentTarget);
+          });
+          makeSwipeable(item, { rightWidth: 64 });
+          grid.appendChild(item);
+        });
     }
 
-    function authShowAddGroupForm(){
-      document.getElementById('authAddGroupForm').style.display = 'block';
-      document.getElementById('authAddGroupTile').style.display = 'none';
-      document.getElementById('authNewGroupName').focus();
-    }
-
-    function authHideAddGroupForm(){
-      document.getElementById('authAddGroupForm').style.display = 'none';
-      document.getElementById('authAddGroupTile').style.display = 'flex';
-      document.getElementById('authNewGroupName').value = '';
-      document.getElementById('authNewGroupAccName').value = '';
-      document.getElementById('authNewGroupSecret').value = '';
+    function authOpenSettingsModal(){
       document.getElementById('authAddGroupError').textContent = '';
+      document.getElementById('authSettingsModal').style.display = 'flex';
+    }
+
+    function authCloseSettingsModal(){
+      const modal = document.getElementById('authSettingsModal');
+      if(modal) modal.style.display = 'none';
+      const n1 = document.getElementById('authNewGroupName');
+      const n2 = document.getElementById('authNewGroupAccName');
+      const n3 = document.getElementById('authNewGroupSecret');
+      const err = document.getElementById('authAddGroupError');
+      if(n1) n1.value = '';
+      if(n2) n2.value = '';
+      if(n3) n3.value = '';
+      if(err) err.textContent = '';
     }
 
     let authAddGroupInFlight = false;
@@ -482,7 +877,7 @@
       const errorEl = document.getElementById('authAddGroupError');
       if(authAddGroupInFlight) return;
       if(!group || !name || !secret){
-        errorEl.textContent = 'Service name, Account name এবং Secret key — সবগুলো দিতে হবে।';
+        errorEl.textContent = 'Service name, Account name and Secret key — all are required.';
         return;
       }
       authAddGroupInFlight = true;
@@ -498,12 +893,12 @@
           body: JSON.stringify({ token: authToken, group, name, secret })
         });
         const data = await res.json().catch(() => ({}));
-        if(!res.ok) throw new Error(data.error || 'যোগ করা যায়নি।');
+        if(!res.ok) throw new Error(data.error || 'Could not add.');
 
-        authHideAddGroupForm();
+        authCloseSettingsModal();
         await authLoadCustomGroups();
       }catch(err){
-        errorEl.textContent = err.message || 'নেটওয়ার্ক সমস্যা, আবার চেষ্টা করুন।';
+        errorEl.textContent = err.message || 'Network error, please try again.';
       }finally{
         saveBtn.textContent = originalLabel;
         saveBtn.disabled = false;
@@ -532,7 +927,8 @@
     }
 
     async function authOpenCategory(group){
-      if(!authToken) return;
+      if(!authToken || swipeJustDragged) return;
+      authCloseAllSwipes();
       authActiveGroup = group;
       document.getElementById('authMainTitle').textContent = group + " Code";
       const container = document.getElementById('authCodeContainer');
@@ -586,7 +982,7 @@
       const errorEl = document.getElementById('authAddError');
       if(authAddInFlight) return;
       if(!name || !secret){
-        errorEl.textContent = 'নাম এবং Secret key দুটোই দিতে হবে।';
+        errorEl.textContent = 'Both name and Secret key are required.';
         return;
       }
       authAddInFlight = true;
@@ -602,14 +998,14 @@
           body: JSON.stringify({ token: authToken, group: authActiveGroup, name, secret })
         });
         const data = await res.json().catch(() => ({}));
-        if(!res.ok) throw new Error(data.error || 'যোগ করা যায়নি।');
+        if(!res.ok) throw new Error(data.error || 'Could not add.');
 
         delete authPrefetchCache[authActiveGroup];
         delete authPrefetchPromises[authActiveGroup];
         authHideAddForm();
         await authOpenCategory(authActiveGroup);
       }catch(err){
-        errorEl.textContent = err.message || 'নেটওয়ার্ক সমস্যা, আবার চেষ্টা করুন।';
+        errorEl.textContent = err.message || 'Network error, please try again.';
       }finally{
         saveBtn.textContent = originalLabel;
         saveBtn.disabled = false;
@@ -645,16 +1041,40 @@
         authLastRenderedData = data;
         authProgressEls = {};
         container.innerHTML = "";
+        const group = authActiveGroup;
         data.accounts.forEach((acc) => {
-          const box = document.createElement('div');
-          box.className = 'auth-account-box';
-          box.onclick = () => authCopyText(acc.code);
-          box.innerHTML = `
-            <span class="auth-account-name">${acc.name}</span>
-            <div class="auth-otp-code">${acc.code}</div>
-            <div class="auth-progress-bar"><div class="auth-progress-fill"></div></div>`;
-          container.appendChild(box);
-          authProgressEls[acc.name] = box.querySelector('.auth-progress-fill');
+          const item = document.createElement('div');
+          item.className = 'swipe-item acc-swipe-item';
+          item.innerHTML = `
+            <div class="swipe-actions swipe-actions-left">
+              <button class="swipe-action-btn swipe-edit-btn" title="Edit"><i class="fa-solid fa-pen"></i></button>
+            </div>
+            <div class="swipe-actions swipe-actions-right">
+              <button class="swipe-action-btn swipe-delete-btn" title="Delete"><i class="fa-solid fa-trash"></i></button>
+            </div>
+            <div class="auth-account-box swipe-content">
+              <span class="auth-account-name">${escapeHtml(acc.name)}</span>
+              <div class="auth-otp-code">${escapeHtml(acc.code)}</div>
+              <div class="auth-progress-bar"><div class="auth-progress-fill"></div></div>
+            </div>`;
+
+          item.querySelector('.swipe-content').addEventListener('click', () => {
+            if(swipeJustDragged) return;
+            authCopyText(acc.code);
+          });
+          item.querySelector('.swipe-edit-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            authCloseAllSwipes();
+            authOpenEditAccountForm(group, acc.name);
+          });
+          item.querySelector('.swipe-delete-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            authOpenConfirmModal(`Delete "${acc.name}"?`, () => authDeleteAccount(group, acc.name));
+          });
+          makeSwipeable(item, { leftWidth: 64, rightWidth: 64 });
+
+          container.appendChild(item);
+          authProgressEls[acc.name] = item.querySelector('.auth-progress-fill');
         });
       }
 
@@ -674,6 +1094,12 @@
         }, 100);
       }
     }
+
+    // Wire up swipe-to-delete on the built-in (static) dashboard buttons
+    document.querySelectorAll('#authCategoryGrid > .swipe-item[data-group]').forEach(item => {
+      makeSwipeable(item, { rightWidth: 64 });
+    });
+    applyHiddenGroupsToStaticGrid();
 
     resetAuthLock();
     document.getElementById('authMasterPass')?.focus();
