@@ -292,6 +292,22 @@
 
   .acc-swipe-item{ margin-bottom:12px; }
   .acc-swipe-item .swipe-content.auth-account-box{ margin-bottom:0; background:var(--surface-solid); }
+
+  /* ---------- Drag handle for reordering account boxes ---------- */
+  .auth-account-name{ padding-right:28px; }
+  .auth-drag-handle{
+    position:absolute; top:8px; right:8px; z-index:3;
+    width:28px; height:28px; display:flex; align-items:center; justify-content:center;
+    color:var(--text-dim); cursor:grab; touch-action:none; border-radius:7px;
+    transition:color 0.15s ease, background 0.15s ease;
+  }
+  .auth-drag-handle:hover{ color:var(--cyan); background:var(--cyan-soft); }
+  .auth-drag-handle:active{ cursor:grabbing; }
+  .acc-swipe-item.auth-reordering{ overflow:visible; z-index:50; }
+  .acc-swipe-item.auth-reordering .swipe-content{
+    box-shadow:0 16px 34px rgba(0,0,0,0.55);
+    border-radius:14px;
+  }
 </style>
 </head>
 <body>
@@ -571,6 +587,106 @@
       });
       if(!stillInside) authCloseAllSwipes();
     }, true);
+
+    // ---------- Drag-to-reorder for account code boxes ----------
+    // Order is remembered per-group in localStorage so it survives refreshes
+    // and re-fetches (the server always returns accounts in its own order).
+    let authReorderState = null;
+
+    function authOrderKey(group){ return 'authOrder:' + group; }
+
+    function authApplyCustomOrder(group, accounts){
+      let order = [];
+      try{ order = JSON.parse(localStorage.getItem(authOrderKey(group)) || '[]'); }catch(e){ order = []; }
+      if(!order.length) return accounts;
+      const byName = new Map(accounts.map(a => [a.name, a]));
+      const ordered = [];
+      order.forEach(name => {
+        if(byName.has(name)){ ordered.push(byName.get(name)); byName.delete(name); }
+      });
+      // Any account not in the saved order (newly added) goes at the end,
+      // in the order the server returned it.
+      byName.forEach(a => ordered.push(a));
+      return ordered;
+    }
+
+    function authSaveOrderFromDOM(group){
+      const container = document.getElementById('authCodeContainer');
+      const order = Array.from(container.children).map(el => el.getAttribute('data-acc-name'));
+      try{ localStorage.setItem(authOrderKey(group), JSON.stringify(order)); }catch(e){}
+    }
+
+    function authStartReorder(e, item, group, handle){
+      if(e.button !== undefined && e.button !== 0) return;
+      e.preventDefault();
+      authCloseAllSwipes();
+      try{ handle.setPointerCapture(e.pointerId); }catch(err){}
+      const rect = item.getBoundingClientRect();
+      authReorderState = { item, group, grabOffsetY: e.clientY - rect.top };
+      item.classList.add('auth-reordering');
+      document.body.style.userSelect = 'none';
+
+      const onMove = (ev) => authReorderMove(ev);
+      const onUp = (ev) => {
+        handle.removeEventListener('pointermove', onMove);
+        handle.removeEventListener('pointerup', onUp);
+        handle.removeEventListener('pointercancel', onUp);
+        try{ handle.releasePointerCapture(ev.pointerId); }catch(err){}
+        authEndReorder();
+      };
+      handle.addEventListener('pointermove', onMove);
+      handle.addEventListener('pointerup', onUp);
+      handle.addEventListener('pointercancel', onUp);
+    }
+
+    function authReorderMove(e){
+      if(!authReorderState) return;
+      const { item, grabOffsetY } = authReorderState;
+      const container = item.parentElement;
+      if(!container) return;
+
+      // Measure the item's natural (untransformed) position so the visual
+      // offset stays correct even after a DOM swap changes its static spot.
+      const prevTransform = item.style.transform;
+      item.style.transform = 'none';
+      const naturalTop = item.getBoundingClientRect().top;
+      item.style.transform = prevTransform;
+
+      const desiredTop = e.clientY - grabOffsetY;
+      item.style.transform = `translateY(${desiredTop - naturalTop}px)`;
+
+      // Simple edge auto-scroll while dragging near the top/bottom of the list.
+      const containerRect = container.getBoundingClientRect();
+      const margin = 36;
+      if(e.clientY < containerRect.top + margin) container.scrollTop -= 10;
+      else if(e.clientY > containerRect.bottom - margin) container.scrollTop += 10;
+
+      // Reorder siblings based on where the pointer currently sits.
+      const siblings = Array.from(container.children).filter(el => el !== item);
+      let insertBefore = null;
+      for(const sib of siblings){
+        const r = sib.getBoundingClientRect();
+        const mid = r.top + r.height / 2;
+        if(e.clientY < mid){ insertBefore = sib; break; }
+      }
+      if(insertBefore){
+        if(item.nextElementSibling !== insertBefore) container.insertBefore(item, insertBefore);
+      }else if(container.lastElementChild !== item){
+        container.appendChild(item);
+      }
+    }
+
+    function authEndReorder(){
+      if(!authReorderState) return;
+      const { item, group } = authReorderState;
+      item.style.transition = 'transform 0.15s var(--ease)';
+      item.style.transform = 'translateY(0px)';
+      item.classList.remove('auth-reordering');
+      document.body.style.userSelect = '';
+      setTimeout(() => { item.style.transition = ''; item.style.transform = ''; }, 160);
+      authSaveOrderFromDOM(group);
+      authReorderState = null;
+    }
 
     // ---------- Password confirm modal (used for every delete action) ----------
     let authPendingDeleteAction = null;
@@ -1042,9 +1158,11 @@
         authProgressEls = {};
         container.innerHTML = "";
         const group = authActiveGroup;
-        data.accounts.forEach((acc) => {
+        const orderedAccounts = authApplyCustomOrder(group, data.accounts);
+        orderedAccounts.forEach((acc) => {
           const item = document.createElement('div');
           item.className = 'swipe-item acc-swipe-item';
+          item.setAttribute('data-acc-name', acc.name);
           item.innerHTML = `
             <div class="swipe-actions swipe-actions-left">
               <button class="swipe-action-btn swipe-edit-btn" title="Edit"><i class="fa-solid fa-pen"></i></button>
@@ -1053,6 +1171,7 @@
               <button class="swipe-action-btn swipe-delete-btn" title="Delete"><i class="fa-solid fa-trash"></i></button>
             </div>
             <div class="auth-account-box swipe-content">
+              <div class="auth-drag-handle" title="Drag to reorder"><i class="fa-solid fa-grip-lines"></i></div>
               <span class="auth-account-name">${escapeHtml(acc.name)}</span>
               <div class="auth-otp-code">${escapeHtml(acc.code)}</div>
               <div class="auth-progress-bar"><div class="auth-progress-fill"></div></div>
@@ -1070,6 +1189,12 @@
           item.querySelector('.swipe-delete-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             authOpenConfirmModal(`Delete "${acc.name}"?`, () => authDeleteAccount(group, acc.name));
+          });
+          const handle = item.querySelector('.auth-drag-handle');
+          handle.addEventListener('click', (e) => e.stopPropagation());
+          handle.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            authStartReorder(e, item, group, handle);
           });
           makeSwipeable(item, { leftWidth: 64, rightWidth: 64 });
 
