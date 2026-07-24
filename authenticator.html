@@ -933,7 +933,7 @@
     async function authLoadCustomGroups(){
       if(!authToken) return;
       try{
-        const res = await fetch(`${API_BASE}/totp-groups?token=${encodeURIComponent(authToken)}`);
+        const res = await fetch(`${API_BASE}/totp-groups?token=${encodeURIComponent(authToken)}`, { cache: 'no-store' });
         const data = await res.json();
         if(!res.ok) return;
         const extra = (data.groups || []).filter(
@@ -1030,7 +1030,7 @@
     function authFetchGroup(group){
       if(authPrefetchPromises[group]) return authPrefetchPromises[group];
       const p = (async () => {
-        const res = await fetch(`${API_BASE}/totp?group=${encodeURIComponent(group)}&token=${encodeURIComponent(authToken)}`);
+        const res = await fetch(`${API_BASE}/totp?group=${encodeURIComponent(group)}&token=${encodeURIComponent(authToken)}`, { cache: 'no-store' });
         const data = await res.json();
         if(!res.ok) throw new Error('fetch failed');
         const entry = { data, fetchedAt: Date.now(), group };
