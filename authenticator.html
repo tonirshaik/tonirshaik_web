@@ -294,11 +294,12 @@
   .acc-swipe-item .swipe-content.auth-account-box{ margin-bottom:0; background:var(--surface-solid); }
 
   /* ---------- Drag handle for reordering account boxes ---------- */
-  .auth-account-name{ padding-right:28px; }
+  .auth-account-name{ padding-right:34px; }
   .auth-drag-handle{
-    position:absolute; top:8px; right:8px; z-index:3;
-    width:28px; height:28px; display:flex; align-items:center; justify-content:center;
-    color:var(--text-dim); cursor:grab; touch-action:none; border-radius:7px;
+    position:absolute; top:6px; right:6px; z-index:3;
+    width:34px; height:34px; display:flex; align-items:center; justify-content:center;
+    color:var(--text-dim); cursor:grab; touch-action:none; border-radius:8px;
+    font-size:1.05rem;
     transition:color 0.15s ease, background 0.15s ease;
   }
   .auth-drag-handle:hover{ color:var(--cyan); background:var(--cyan-soft); }
@@ -620,23 +621,27 @@
       if(e.button !== undefined && e.button !== 0) return;
       e.preventDefault();
       authCloseAllSwipes();
-      try{ handle.setPointerCapture(e.pointerId); }catch(err){}
       const rect = item.getBoundingClientRect();
-      authReorderState = { item, group, grabOffsetY: e.clientY - rect.top };
+      authReorderState = { item, group, grabOffsetY: e.clientY - rect.top, pointerId: e.pointerId };
       item.classList.add('auth-reordering');
       document.body.style.userSelect = 'none';
+      window.addEventListener('pointermove', authReorderMoveListener);
+      window.addEventListener('pointerup', authReorderUpListener);
+      window.addEventListener('pointercancel', authReorderUpListener);
+    }
 
-      const onMove = (ev) => authReorderMove(ev);
-      const onUp = (ev) => {
-        handle.removeEventListener('pointermove', onMove);
-        handle.removeEventListener('pointerup', onUp);
-        handle.removeEventListener('pointercancel', onUp);
-        try{ handle.releasePointerCapture(ev.pointerId); }catch(err){}
-        authEndReorder();
-      };
-      handle.addEventListener('pointermove', onMove);
-      handle.addEventListener('pointerup', onUp);
-      handle.addEventListener('pointercancel', onUp);
+    function authReorderMoveListener(e){
+      if(!authReorderState || e.pointerId !== authReorderState.pointerId) return;
+      if(e.cancelable) e.preventDefault();
+      authReorderMove(e);
+    }
+
+    function authReorderUpListener(e){
+      if(!authReorderState || e.pointerId !== authReorderState.pointerId) return;
+      window.removeEventListener('pointermove', authReorderMoveListener);
+      window.removeEventListener('pointerup', authReorderUpListener);
+      window.removeEventListener('pointercancel', authReorderUpListener);
+      authEndReorder();
     }
 
     function authReorderMove(e){
@@ -1150,6 +1155,7 @@
     }
 
     function renderCodes(cacheObj, now){
+      if(authReorderState) return; // don't touch the DOM while the user is mid-drag
       const container = document.getElementById('authCodeContainer');
       const { data, fetchedAt } = cacheObj;
 
