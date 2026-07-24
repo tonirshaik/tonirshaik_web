@@ -825,6 +825,7 @@
       </div>
       <div class="embed-frame-wrap">
         <iframe
+          id="authenticatorFrame"
           src="authenticator.html"
           loading="lazy">
         </iframe>
@@ -1123,6 +1124,10 @@
         e.preventDefault();
         if(el.dataset.view === 'security'){ secLogout(); }
         if(el.dataset.view === 'private'){ privLogout(); }
+        if(el.dataset.view === 'authenticator'){
+          const authFrame = document.getElementById('authenticatorFrame');
+          if(authFrame) authFrame.src = 'authenticator.html';
+        }
         if(el.dataset.view === 'cv'){ cvResetLock(); }
         if(el.dataset.view === 'diploma'){ diplomaResetLock(); }
         if(el.dataset.view === 'school'){ schoolResetLock(); }
