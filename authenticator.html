@@ -203,6 +203,10 @@
   }
   .auth-cat-btn.auth-add-tile:hover{ background:var(--cyan-soft); border-color:var(--cyan); }
   .auth-cat-btn .fa-key{ color:var(--gold); }
+  .auth-cat-icon-img{
+    width:18px; height:18px; object-fit:contain; border-radius:4px;
+    vertical-align:middle; flex-shrink:0; background:#fff; padding:2px;
+  }
   #authAddGroupForm{
     background:var(--surface); border:1px solid var(--border-strong);
     border-radius:14px; padding:16px; margin-top:14px;
@@ -924,6 +928,51 @@
       authLoadCustomGroups();
     }
 
+    // ---------- Auto icon resolver for custom (user-added) services ----------
+    // 1) If the service name matches a well-known brand, use its real
+    //    Font Awesome brand icon — instant, no network request needed.
+    // 2) Otherwise, guess the company's domain from the name and pull its
+    //    real logo from Clearbit's free logo API. If that image fails to
+    //    load (unknown domain, offline, etc.) it quietly falls back to the
+    //    plain key icon so the button never looks broken.
+    const KNOWN_BRAND_ICONS = {
+      shopify:'fa-shopify', paypal:'fa-paypal', spotify:'fa-spotify', discord:'fa-discord',
+      github:'fa-github', gitlab:'fa-gitlab', bitbucket:'fa-bitbucket', reddit:'fa-reddit',
+      whatsapp:'fa-whatsapp', steam:'fa-steam', amazon:'fa-amazon', apple:'fa-apple',
+      microsoft:'fa-microsoft', dropbox:'fa-dropbox', twitter:'fa-x-twitter', x:'fa-x-twitter',
+      youtube:'fa-youtube', pinterest:'fa-pinterest', snapchat:'fa-snapchat', slack:'fa-slack',
+      twitch:'fa-twitch', vimeo:'fa-vimeo', wordpress:'fa-wordpress', skype:'fa-skype',
+      yahoo:'fa-yahoo', tumblr:'fa-tumblr', behance:'fa-behance', figma:'fa-figma',
+      trello:'fa-trello', patreon:'fa-patreon', etsy:'fa-etsy', airbnb:'fa-airbnb',
+      uber:'fa-uber', google:'fa-google', facebook:'fa-facebook',
+      instagram:'fa-instagram', tiktok:'fa-tiktok', linkedin:'fa-linkedin', telegram:'fa-telegram',
+      binance:'fa-btc', mega:'fa-cloud'
+    };
+
+    // Manual overrides: real logo URLs for services where auto-guessing the
+    // domain (or Clearbit's coverage) doesn't work reliably.
+    const MANUAL_LOGO_URLS = {
+      redotpay: 'https://www.redotpay.com/img/favicon.png'
+    };
+
+    function authGetGroupIconHtml(name){
+      const key = String(name).toLowerCase().trim();
+      const brand = KNOWN_BRAND_ICONS[key];
+      if(brand){
+        return `<i class="fa-brands ${brand}"></i>`;
+      }
+      const manualUrl = MANUAL_LOGO_URLS[key];
+      const fallback = `this.outerHTML='<i class=&quot;fa-solid fa-key&quot;></i>'`;
+      if(manualUrl){
+        return `<img class="auth-cat-icon-img" alt="" loading="lazy" src="${manualUrl}" onerror="${fallback}">`;
+      }
+      // Best-effort domain guess: "RedotPay" -> "redotpay.com"
+      const domainGuess = key.replace(/[^a-z0-9]/g, '') + '.com';
+      return `<img class="auth-cat-icon-img" alt="" loading="lazy"
+                src="https://logo.clearbit.com/${domainGuess}?size=64"
+                onerror="${fallback}">`;
+    }
+
     const STATIC_GROUPS = ['Gmail','Facebook','Instagram','TikTok','Mega','linkedin','Telegram','Binance'];
     let AUTH_GROUPS = [...STATIC_GROUPS];
     let authPrefetchCache = {};
@@ -958,7 +1007,7 @@
             <div class="swipe-actions swipe-actions-right">
               <button class="swipe-action-btn swipe-delete-btn"><i class="fa-solid fa-trash"></i></button>
             </div>
-            <div class="auth-cat-btn auth-cat-btn-dynamic swipe-content"><i class="fa-solid fa-key"></i> ${escapeHtml(g)}</div>`;
+            <div class="auth-cat-btn auth-cat-btn-dynamic swipe-content">${authGetGroupIconHtml(g)} ${escapeHtml(g)}</div>`;
           item.querySelector('.swipe-content').addEventListener('click', () => {
             if(swipeJustDragged) return;
             authOpenCategory(g);
