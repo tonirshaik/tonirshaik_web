@@ -1,4 +1,3 @@
-
 const API_BASE = "https://tonir-vault-api.tonirshaik.workers.dev";
 
 const body = document.body;
@@ -734,9 +733,21 @@ function mfShowText(node, text){
     `<button class="mf-mini" data-act="edit" title="Edit"><i class="fas fa-pen-to-square"></i></button>` +
     `<button class="mf-mini" data-act="dl" data-id="${mfEsc(node.nodeId)}" title="Download"><i class="fas fa-download"></i></button>`;
   const body = document.getElementById('mfModalBody');
+  const wrap = document.createElement('div'); wrap.className = 'mf-code';
+  const gutter = document.createElement('pre'); gutter.className = 'mf-gutter'; gutter.setAttribute('aria-hidden','true');
+  gutter.textContent = mfLineNums(text);
   const pre = document.createElement('pre'); pre.className = 'mf-text';
   pre.textContent = text;
-  body.innerHTML = ''; body.appendChild(pre);
+  wrap.appendChild(gutter); wrap.appendChild(pre);
+  body.innerHTML = ''; body.appendChild(wrap);
+}
+
+// line number gutter text: "1\n2\n3..." (text-er line count onujayi)
+function mfLineNums(text){
+  const n = text.split('\n').length;
+  let s = '';
+  for(let i = 1; i <= n; i++) s += i + (i < n ? '\n' : '');
+  return s;
 }
 
 function mfStartEdit(){
@@ -745,9 +756,13 @@ function mfStartEdit(){
     `<button class="mf-btn mf-primary" data-act="save"><i class="fas fa-floppy-disk"></i> Save</button>` +
     `<button class="mf-btn" data-act="cancel-edit">Cancel</button>`;
   const body = document.getElementById('mfModalBody');
-  body.innerHTML = '<textarea class="mf-editor" id="mfEditor" spellcheck="false"></textarea>';
+  body.innerHTML = '<div class="mf-edit-wrap"><pre class="mf-gutter mf-gutter-edit" id="mfEditGutter" aria-hidden="true"></pre><textarea class="mf-editor" id="mfEditor" spellcheck="false" wrap="off"></textarea></div>';
   const ta = document.getElementById('mfEditor');
+  const gt = document.getElementById('mfEditGutter');
   ta.value = mfEditText;
+  gt.textContent = mfLineNums(ta.value);
+  ta.addEventListener('input', () => { gt.textContent = mfLineNums(ta.value); gt.scrollTop = ta.scrollTop; });
+  ta.addEventListener('scroll', () => { gt.scrollTop = ta.scrollTop; });
   ta.addEventListener('keydown', e => {
     if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's'){
       e.preventDefault();
