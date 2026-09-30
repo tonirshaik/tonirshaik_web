@@ -1080,7 +1080,19 @@ footer{
 .mf-modal-body{ padding:14px; overflow:auto; text-align:center; }
 .mf-view{ max-width:100%; max-height:72vh; border-radius:8px; }
 .mf-pdf{ width:100%; height:72vh; border:none; background:#fff; }
-.mf-text{ text-align:left; white-space:pre-wrap; word-break:break-word; font-family:var(--mono); font-size:0.8rem; margin:0; }
+.mf-text{ text-align:left; white-space:pre; flex:1 1 auto; font-family:var(--mono); font-size:0.82rem; line-height:1.6; margin:0; padding:12px 14px; }
+
+/* Line numbers (MEGA style) */
+.mf-code{ display:flex; align-items:flex-start; overflow-x:auto; background:var(--bg); border:1px solid var(--border-strong); border-radius:10px; }
+.mf-gutter{
+  flex:none; margin:0; padding:12px 12px 12px 14px; text-align:right; user-select:none; -webkit-user-select:none;
+  font-family:var(--mono); font-size:0.82rem; line-height:1.6; color:var(--text-dim);
+  background:var(--bg); border-right:1px solid var(--border); min-width:3ch; box-sizing:content-box;
+  position:sticky; left:0; z-index:1;
+}
+.mf-edit-wrap{ display:flex; align-items:stretch; background:var(--bg); border:1px solid var(--border-strong); border-radius:10px; overflow:hidden; }
+.mf-edit-wrap:focus-within{ border-color:var(--gold); }
+.mf-gutter-edit{ position:static; overflow:hidden; height:auto; padding-bottom:24px; }
 
 .mf-layout-wrap{ position:relative; }
 .mf-menu{ display:none; position:absolute; right:0; top:calc(100% + 6px); z-index:50; min-width:200px; background:var(--surface-solid); border:1px solid var(--border-strong); border-radius:12px; padding:8px; box-shadow:0 14px 40px rgba(0,0,0,0.55); }
@@ -1105,12 +1117,12 @@ footer{
 /* Text editor in preview modal */
 .mf-modal-actions{ display:flex; gap:6px; align-items:center; }
 .mf-editor{
-  width:100%; min-height:60vh; resize:vertical; box-sizing:border-box;
-  background:var(--bg); color:var(--text); border:1px solid var(--border-strong);
-  border-radius:10px; padding:12px; font-family:var(--mono); font-size:0.82rem;
+  flex:1 1 auto; min-width:0; min-height:60vh; resize:vertical; box-sizing:border-box;
+  background:var(--bg); color:var(--text); border:none;
+  padding:12px; font-family:var(--mono); font-size:0.82rem;
   line-height:1.6; tab-size:2; white-space:pre; overflow:auto;
 }
-.mf-editor:focus{ outline:none; border-color:var(--gold); }
+.mf-editor:focus{ outline:none; }
 
 /* List (roomier rows) */
 .mf-l-list{ gap:12px; }
