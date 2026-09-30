@@ -453,6 +453,7 @@ function mfMarkLayout(){
 }
 function mfToggleLayoutMenu(e){
   if(e) e.stopPropagation();
+  const um = document.getElementById('mfUploadMenu'); if(um) um.classList.remove('show');
   document.getElementById('mfLayoutMenu').classList.toggle('show');
   mfMarkLayout();
 }
@@ -466,6 +467,8 @@ function mfSetLayout(name){
 document.addEventListener('click', () => {
   const m = document.getElementById('mfLayoutMenu');
   if(m) m.classList.remove('show');
+  const u = document.getElementById('mfUploadMenu');
+  if(u) u.classList.remove('show');
 });
 
 const mfThumbObserver = ('IntersectionObserver' in window) ? new IntersectionObserver((entries) => {
@@ -621,7 +624,7 @@ function mfRender(){
   const el = document.getElementById('mfList');
   el.className = 'mf-list mf-l-' + mfLayout;
   if(!items.length){
-    el.innerHTML = '<div class="mf-empty">' + (mfQuery ? 'No matching files.' : 'This folder is empty. Tap Upload or drop files here.') + '</div>';
+    el.innerHTML = '<div class="mf-empty">' + (mfQuery ? 'No matching files.' : 'This folder is empty. Tap Upload or drop files / folders here.') + '</div>';
     return;
   }
   el.innerHTML = items.map(f => {
@@ -657,21 +660,58 @@ async function mfNewFolder(){
   catch(e){ alert('Could not create folder: ' + (e.message || e)); }
 }
 
-async function mfUploadFiles(files){
+// ----- Upload menu (Files / Folder) -----
+function mfToggleUploadMenu(e){
+  if(e) e.stopPropagation();
+  const lm = document.getElementById('mfLayoutMenu'); if(lm) lm.classList.remove('show');
+  document.getElementById('mfUploadMenu').classList.toggle('show');
+}
+function mfPickFiles(){ document.getElementById('mfFileInput').click(); }
+function mfPickFolder(){ document.getElementById('mfFolderInput').click(); }
+
+// folder path ("a/b/c") banao, age thakle reuse koro
+async function mfEnsureDir(root, parts, cache){
+  let cur = root, key = '';
+  for(const p of parts){
+    key += '/' + p;
+    if(!cache.has(key)){
+      const parent = cur;
+      cache.set(key, (async () => {
+        const ex = (parent.children || []).find(c => c.directory && c.name === p);
+        return ex || await parent.mkdir(p);
+      })());
+    }
+    cur = await cache.get(key);
+  }
+  return cur;
+}
+
+// files = FileList / array (webkitRelativePath ba _rel thakle folder structure ta rakha hobe)
+// emptyDirs = drag & drop-er khali folder gulor path
+async function mfUploadFiles(files, emptyDirs){
   const list = [...files];
-  if(!list.length || !mfCwd) return;
+  const dirs = emptyDirs || [];
+  if((!list.length && !dirs.length) || !mfCwd) return;
   const target = mfCwd;
   const box = document.getElementById('mfUploads');
+  const cache = new Map();
+  for(const d of dirs){
+    try{ await mfEnsureDir(target, d.split('/').filter(Boolean), cache); }catch(_e){}
+  }
   for(const f of list){
+    const rel = f._rel || f.webkitRelativePath || f.name;
+    const parts = rel.split('/').filter(Boolean);
+    const fileName = parts.pop() || f.name;
     const row = document.createElement('div');
     row.className = 'mf-up';
     row.innerHTML = '<div class="mf-up-top"><span class="mf-up-name"></span><span class="mf-up-pct">0%</span></div><div class="mf-bar-bg"><div class="mf-bar-fill"></div></div>';
-    row.querySelector('.mf-up-name').textContent = f.name;
+    row.querySelector('.mf-up-name').textContent = rel;
     box.appendChild(row);
     const pct = row.querySelector('.mf-up-pct'), fill = row.querySelector('.mf-bar-fill');
     try{
+      const dest = parts.length ? await mfEnsureDir(target, parts, cache) : target;
       const data = new Uint8Array(await f.arrayBuffer());
-      const up = target.upload({ name: f.name, size: f.size });
+      const up = dest.upload({ name: fileName, size: f.size });
       up.on('progress', info => {
         const total = info.bytesTotal || f.size || 1;
         const p = Math.min(100, Math.round(((info.bytesUploaded != null ? info.bytesUploaded : info.bytesLoaded) || 0) / total * 100));
@@ -687,6 +727,33 @@ async function mfUploadFiles(files){
     }
   }
   mfRender(); mfLoadSpace();
+}
+
+// Drag & drop: file ar folder dutoi (folder-er bhetorer sob kichu shoho)
+async function mfReadDropped(dt){
+  const entries = [];
+  for(const it of (dt.items || [])){
+    const en = it.webkitGetAsEntry && it.webkitGetAsEntry();
+    if(en) entries.push(en);
+  }
+  if(!entries.length) return { files: [...(dt.files || [])], dirs: [] };
+  const files = [], dirs = [];
+  const walk = async (en, base) => {
+    if(en.isFile){
+      const f = await new Promise((res, rej) => en.file(res, rej));
+      f._rel = base + f.name; files.push(f);
+    }else if(en.isDirectory){
+      dirs.push(base + en.name);
+      const rd = en.createReader();
+      let batch;
+      do{
+        batch = await new Promise((res, rej) => rd.readEntries(res, rej));
+        for(const c of batch) await walk(c, base + en.name + '/');
+      }while(batch.length);
+    }
+  };
+  for(const en of entries) await walk(en, '');
+  return { files, dirs };
 }
 
 async function mfFetchBlob(node){
@@ -1042,7 +1109,11 @@ document.addEventListener('click', async (e) => {
   if(!zone) return;
   ['dragenter','dragover'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add('drag'); }));
   ['dragleave','drop'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove('drag'); }));
-  zone.addEventListener('drop', e => { if(e.dataTransfer && e.dataTransfer.files) mfUploadFiles(e.dataTransfer.files); });
+  zone.addEventListener('drop', async e => {
+    if(!e.dataTransfer) return;
+    const r = await mfReadDropped(e.dataTransfer);
+    mfUploadFiles(r.files, r.dirs);
+  });
 })();
 
 function myfileLogout(){
