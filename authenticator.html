@@ -1285,5 +1285,73 @@
     document.getElementById('authMasterPass')?.focus();
   </script>
 
+  <!-- ===== Fingerprint / Face unlock (passkey) for Authenticator ===== -->
+  <script>
+  (function () {
+    const MAGIC = '__passkey__', CAT = 'totp';
+    const supported = !!(window.PublicKeyCredential && navigator.credentials);
+    if (!supported) return;
+    const enc = s => new TextEncoder().encode(s);
+    const b64u = buf => { let s = ''; new Uint8Array(buf).forEach(x => s += String.fromCharCode(x)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+    const unb64u = s => { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return Uint8Array.from(atob(s), c => c.charCodeAt(0)); };
+
+    async function post(path, body) {
+      const r = await fetch(API_BASE + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || ('Error ' + r.status));
+      return d;
+    }
+
+    // passkey token thakle password-er bodole oita dei
+    let pending = null;
+    const _apiLogin = apiLogin;
+    apiLogin = async function (category, password) {
+      if (password === MAGIC && category === CAT && pending) { const t = pending; pending = null; return t; }
+      return _apiLogin(category, password);
+    };
+
+    const css = document.createElement('style');
+    css.textContent = '.pk-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin:12px 0 0;padding:12px;border-radius:50px;border:1px solid var(--border-strong);background:var(--cyan-soft);color:var(--text);font:inherit;font-size:.92rem;font-weight:600;cursor:pointer;transition:.2s}.pk-btn:hover{border-color:var(--cyan);transform:translateY(-2px)}';
+    document.head.appendChild(css);
+
+    let busy = false;
+    async function unlock() {
+      if (busy) return;
+      busy = true;
+      const errorEl = document.getElementById('authLockError');
+      try {
+        const o = await post('/passkey/login-options', { category: CAT });
+        let ids = Array.isArray(o.allow) ? o.allow.slice() : [];
+        try { const k = localStorage.getItem('pkCredId'); if (!ids.length && k) ids = [k]; } catch (_e) {}
+        const pub = { challenge: enc(o.challenge), rpId: o.rpId, userVerification: 'required', timeout: 60000 };
+        if (ids.length) pub.allowCredentials = ids.map(id => ({ type: 'public-key', id: unb64u(id), transports: ['internal'] }));
+        const cred = await navigator.credentials.get({ publicKey: pub });
+        try { localStorage.setItem('pkCredId', cred.id); } catch (_e) {}
+        const r = cred.response;
+        const d = await post('/passkey/login', {
+          category: CAT, id: cred.id,
+          clientDataJSON: b64u(r.clientDataJSON), authenticatorData: b64u(r.authenticatorData), signature: b64u(r.signature)
+        });
+        pending = d.token;
+        const f = document.getElementById('authMasterPass');
+        f.value = MAGIC;
+        authTryUnlock();
+        setTimeout(() => { if (f.value === MAGIC) f.value = ''; }, 10000);
+      } catch (e) {
+        const cancelled = e && (e.name === 'NotAllowedError' || e.name === 'AbortError');
+        if (errorEl) errorEl.textContent = cancelled ? 'Fingerprint/Face kaj kore ni. Password din.' : (e.message || 'Passkey error');
+      } finally { busy = false; }
+    }
+
+    const submit = document.getElementById('authSubmitBtn');
+    if (submit && !document.getElementById('authPasskeyBtn')) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.id = 'authPasskeyBtn'; b.className = 'pk-btn';
+      b.innerHTML = '<i class="fa-solid fa-fingerprint"></i> Fingerprint / Face';
+      b.onclick = unlock;
+      submit.after(b);
+    }
+  })();
+  </script>
 </body>
 </html>
