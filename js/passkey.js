@@ -2,7 +2,7 @@
    main.js ar myfile-drive.js-er PORE load korte hobe.
    Password ager moto-i kaj kore; passkey shudhu extra shortcut. */
 (function () {
-  const PK_AUTO = true;                 // section khulle nijei fingerprint/face chaibe (false korle shudhu button)
+  const PK_AUTO = false;                 // section khulle nijei fingerprint/face chaibe (false korle shudhu button)
   const MAGIC = '__passkey__';
   const CATS = {
     security: ['secPasswordField', 'secTryLogin'],
@@ -52,7 +52,13 @@
     busy[cat] = true;
     try {
       const o = await post('/passkey/login-options', { category: cat });
-      const cred = await navigator.credentials.get({ publicKey: { challenge: enc(o.challenge), rpId: o.rpId, userVerification: 'required', timeout: 60000 } });
+      // credential id dile Chrome "Use saved passkey? Continue" step chhere sorasori fingerprint chay
+      let ids = Array.isArray(o.allow) ? o.allow.slice() : [];
+      try { const k = localStorage.getItem('pkCredId'); if (!ids.length && k) ids = [k]; } catch (_e) {}
+      const pub = { challenge: enc(o.challenge), rpId: o.rpId, userVerification: 'required', timeout: 60000 };
+      if (ids.length) pub.allowCredentials = ids.map(id => ({ type: 'public-key', id: unb64u(id), transports: ['internal'] }));
+      const cred = await navigator.credentials.get({ publicKey: pub });
+      try { localStorage.setItem('pkCredId', cred.id); } catch (_e) {}
       const r = cred.response;
       const d = await post('/passkey/login', {
         category: cat, id: cred.id,
