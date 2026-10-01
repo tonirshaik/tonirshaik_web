@@ -262,6 +262,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/solid.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/brands.min.css">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/myfile-drive.css">
 </head>
 <body>
 
@@ -800,14 +801,16 @@
 
         <div id="myfileMain" class="sec-screen">
           <div class="mf" id="mfDrop">
+            <div class="mf-accts" id="mfAccts"></div>
             <div class="mf-bar">
               <input type="text" id="mfSearch" placeholder="Search in this folder..." oninput="mfSetQuery(this.value)">
+              <button class="mf-btn" onclick="mfRefresh()" title="Refresh"><i class="fas fa-rotate"></i></button>
               <button class="mf-btn" onclick="mfNewFolder()" title="New folder"><i class="fas fa-folder-plus"></i></button>
               <div class="mf-layout-wrap">
                 <button class="mf-btn mf-primary" onclick="mfToggleUploadMenu(event)" title="Upload"><i class="fas fa-upload"></i> Upload <i class="fas fa-caret-down"></i></button>
                 <div class="mf-menu" id="mfUploadMenu">
                   <button onclick="mfPickFiles()"><i class="fas fa-file-arrow-up"></i><span>Upload files</span></button>
-                  <button onclick="mfPickFolder()"><i class="fas fa-folder-open"></i><span>Upload folder</span></button>
+                  <button onclick="mfPickUploadFolder()"><i class="fas fa-folder-open"></i><span>Upload folder</span></button>
                 </div>
               </div>
               <div class="mf-layout-wrap">
@@ -836,5 +839,6 @@
   </main>
 
   <script src="js/main.js"></script>
+  <script src="js/myfile-drive.js"></script>
 </body>
 </html>
