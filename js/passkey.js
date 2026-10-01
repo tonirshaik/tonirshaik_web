@@ -2,7 +2,8 @@
    main.js ar myfile-drive.js-er PORE load korte hobe.
    Password ager moto-i kaj kore; passkey shudhu extra shortcut. */
 (function () {
-  const PK_AUTO = true;                 // section khulle nijei fingerprint/face chaibe (false korle shudhu button)
+  const PK_AUTO = false;                // true = sob section khulle nijei fingerprint/face chaibe
+  const PK_AUTO_FOR = [];               // shudhu ei section gulor jonno auto, jemon ['card', 'security']
   const MAGIC = '__passkey__';
   const CATS = {
     security: ['secPasswordField', 'secTryLogin'],
@@ -51,7 +52,7 @@
     if (!supported || !m || busy[cat]) return;
     busy[cat] = true;
     try {
-      const o = await post('/passkey/login-options', { category: cat });
+      const o = await post('/passkey/login-options', { category: cat, origin: location.origin });
       const cred = await navigator.credentials.get({ publicKey: { challenge: enc(o.challenge), rpId: o.rpId, userVerification: 'required', timeout: 60000 } });
       const r = cred.response;
       const d = await post('/passkey/login', {
@@ -76,7 +77,7 @@
   }
 
   async function enroll(cat, tok) {
-    const o = await post('/passkey/reg-options', { token: tok, category: cat });
+    const o = await post('/passkey/reg-options', { token: tok, category: cat, origin: location.origin });
     let cred;
     try {
       cred = await navigator.credentials.create({ publicKey: {
@@ -183,10 +184,10 @@
 
   // section khulle auto prompt
   document.addEventListener('click', e => {
-    if (!PK_AUTO) return;
     const el = e.target.closest('[data-view]');
     if (!el) return;
     const cat = el.dataset.view;
+    if (!PK_AUTO && !PK_AUTO_FOR.includes(cat)) return;
     if (CATS[cat] && supported && enrolled()) setTimeout(() => unlock(cat, true), 350);
   });
 
