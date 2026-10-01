@@ -2,7 +2,7 @@
    main.js-er PORE load korte hobe. Mega-r moto API dei GDNode class-e,
    tai ager sob feature (preview, upload, rename, move, copy...) Drive-e-o cholbe. */
 
-// Google Cloud Console theke paoa Web Client ID (public hole shomossha nei)
+// Fallback-er jonno (Worker set thakle ei ID lagbe na). Google Cloud-er Web Client ID
 const GOOGLE_CLIENT_ID = '582508472830-2gnv54j3jhkklcplro2a6l0k3c5u84qf.apps.googleusercontent.com';
 
 // Notun account joraar jonno ekhane ekta line add korun (porer comment dekhun)
@@ -95,9 +95,22 @@ class GDNode {
 /* ---------- Google Drive: connection (Mega Storage object-er moto) ---------- */
 class MfDrive {
   constructor(cfg) { this.cfg = cfg; this.tok = null; this.exp = 0; this.files = {}; this.root = null; }
-  token() {
+  async token() {
+    if (this.tok && Date.now() < this.exp) return this.tok;
+    if (this.cfg.server !== false) {                       // Worker theke token (Mega-r moto, login lagbe na)
+      try {
+        const r = await fetch(`${API_BASE}/gdrive-auth?token=${encodeURIComponent(myfileToken)}&account=${encodeURIComponent(this.cfg.id)}`);
+        const d = await r.json().catch(() => ({}));
+        if (r.ok && d.access_token) { this.tok = d.access_token; this.exp = Date.now() + (d.expires_in - 60) * 1000; return this.tok; }
+        if (r.status === 401) throw new Error('Session expire, Lock kore abar login korun');
+      } catch (e) { if (/^Session/.test(e.message)) throw e; }
+    }
+    return this.popup();                                   // fallback: Google sign-in popup
+  }
+  async popup() {
+    if (GOOGLE_CLIENT_ID.startsWith('YOUR_')) throw new Error('Server-e Google Drive set kora nei');
+    await mfLoadGis();
     return new Promise((ok, no) => {
-      if (this.tok && Date.now() < this.exp) return ok(this.tok);
       google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
         scope: 'https://www.googleapis.com/auth/drive',
@@ -107,7 +120,7 @@ class MfDrive {
           this.tok = r.access_token; this.exp = Date.now() + (r.expires_in - 60) * 1000; ok(this.tok);
         },
         error_callback: e => no(new Error((e && e.type) || 'Google login cancelled'))
-      }).requestAccessToken({ prompt: this.tok ? '' : 'select_account' });
+      }).requestAccessToken({ prompt: 'select_account' });
     });
   }
   async raw(path, o = {}, retry = true) {
@@ -163,8 +176,6 @@ function mfLoadGis() {
 }
 
 async function mfConnectDrive(cfg) {
-  if (GOOGLE_CLIENT_ID.startsWith('YOUR_')) throw new Error('GOOGLE_CLIENT_ID set kora hoyni');
-  await mfLoadGis();
   const d = new MfDrive(cfg);
   await d.token();
   const r = await d.api('files/root?fields=' + GD_FIELDS);
