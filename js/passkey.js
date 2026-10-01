@@ -2,7 +2,7 @@
    main.js ar myfile-drive.js-er PORE load korte hobe.
    Password ager moto-i kaj kore; passkey shudhu extra shortcut. */
 (function () {
-  const PK_AUTO = false;                // true = sob section khulle nijei fingerprint/face chaibe
+  const PK_AUTO = true;                 // true = sob section khulle nijei fingerprint/face chaibe
   const PK_AUTO_FOR = [];               // shudhu ei section gulor jonno auto, jemon ['card', 'security']
   const MAGIC = '__passkey__';
   const CATS = {
@@ -29,6 +29,10 @@
   const enc = s => new TextEncoder().encode(s);
   const b64u = buf => { let s = ''; new Uint8Array(buf).forEach(x => s += String.fromCharCode(x)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
   const unb64u = s => { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return Uint8Array.from(atob(s), c => c.charCodeAt(0)); };
+  // ei device-er passkey ID mone rakhi, jate browser "Continue" na chere shorashori fingerprint chay
+  const getIds = () => { try { const a = JSON.parse(localStorage.getItem('pkCredIds') || '[]'); return Array.isArray(a) ? a : []; } catch (_e) { return []; } };
+  const saveId = id => { try { const a = getIds().filter(x => x !== id); a.push(id); localStorage.setItem('pkCredIds', JSON.stringify(a.slice(-5))); } catch (_e) {} };
+  const forget = () => { try { localStorage.removeItem('pkCredIds'); localStorage.removeItem('pkEnrolled'); } catch (_e) {} };
   const say = m => { try { mfToast(m); } catch (_e) { alert(m); } };
 
   async function post(path, body) {
@@ -53,18 +57,23 @@
     busy[cat] = true;
     try {
       const o = await post('/passkey/login-options', { category: cat, origin: location.origin });
-      const cred = await navigator.credentials.get({ publicKey: { challenge: enc(o.challenge), rpId: o.rpId, userVerification: 'required', timeout: 60000 } });
+      const pub = { challenge: enc(o.challenge), rpId: o.rpId, userVerification: 'required', timeout: 60000 };
+      const ids = getIds();
+      if (ids.length) pub.allowCredentials = ids.map(id => ({ type: 'public-key', id: unb64u(id), transports: ['internal'] }));
+      const cred = await navigator.credentials.get({ publicKey: pub });
       const r = cred.response;
       const d = await post('/passkey/login', {
         category: cat, id: cred.id,
         clientDataJSON: b64u(r.clientDataJSON), authenticatorData: b64u(r.authenticatorData), signature: b64u(r.signature)
       });
+      saveId(cred.id);
       pending[cat] = d.token;
       const f = document.getElementById(m[0]);
       f.value = MAGIC;
       window[m[1]]();
       setTimeout(() => { if (f.value === MAGIC) f.value = ''; }, 10000);
     } catch (e) {
+      if (e && /verification failed/i.test(e.message || '')) { forget(); say('Ei device-er Passkey server-e nei. Password din, tarpor abar chalu korun.'); return; }
       const cancelled = e && (e.name === 'NotAllowedError' || e.name === 'AbortError');
       if (!quiet || !cancelled) say(cancelled ? 'Fingerprint/Face kaj kore ni. Password din.' : (e.message || 'Passkey error'));
     } finally { busy[cat] = false; }
@@ -100,6 +109,7 @@
       publicKey: b64u(r.getPublicKey()), alg: r.getPublicKeyAlgorithm(), label: deviceLabel()
     });
     try { localStorage.setItem('pkEnrolled', '1'); } catch (_e) {}
+    saveId(cred.id);
     addUnlockButtons();
   }
 
