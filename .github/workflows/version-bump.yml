@@ -29,7 +29,7 @@ jobs:
           node <<'NODE'
           const fs = require('fs');
           const current = JSON.parse(fs.readFileSync('version.json', 'utf8')).version;
-          const match = /^(\\d+)\\.(\\d+)\\.(\\d+)$/.exec(current);
+          const match = /^([0-9]+)\.([0-9]+)\.([0-9]+)$/.exec(current);
           if (!match) throw new Error('version.json must contain a semantic version like 1.0.0');
           let [major, minor, patch] = match.slice(1).map(Number);
           const labels = JSON.parse(process.env.PR_LABELS || '[]').map(x => String(x).toLowerCase());
@@ -45,8 +45,8 @@ jobs:
           data.version = next;
           data.release = labels.includes('major') ? 'Major release' :
             (labels.includes('feature') || labels.includes('minor') ? 'Feature release' : 'Bug fix release');
-          fs.writeFileSync('version.json', JSON.stringify(data, null, 2) + '\\n');
-          fs.writeFileSync(process.env.GITHUB_OUTPUT, `version=${next}\\n`, { flag: 'a' });
+          fs.writeFileSync('version.json', JSON.stringify(data, null, 2) + '\n');
+          fs.writeFileSync(process.env.GITHUB_OUTPUT, `version=${next}\n`, { flag: 'a' });
           NODE
 
       - name: Open version bump pull request
