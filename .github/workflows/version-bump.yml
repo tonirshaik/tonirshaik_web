@@ -1,64 +1,70 @@
-name: Create semantic version bump PR
+name: Automatically bump website version
 
 on:
-  pull_request:
-    types: [closed]
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - version.json
+      - VERSIONING.md
 
 permissions:
   contents: write
-  pull-requests: write
+
+concurrency:
+  group: automatic-version-bump
+  cancel-in-progress: false
 
 jobs:
-  version-bump:
-    if: >-
-      github.event.pull_request.merged == true &&
-      !startsWith(github.event.pull_request.head.ref, 'version-bump/')
+  bump-version:
+    # The version-only commit is excluded above, preventing an infinite loop.
+    if: "!contains(github.event.head_commit.message, '[skip-version-bump]')"
     runs-on: ubuntu-latest
     steps:
-      - name: Check out main
+      - name: Check out latest main
         uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0
+          fetch-depth: 2
 
-      - name: Calculate next version
+      - name: Calculate and write next semantic version
         id: version
         env:
-          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           node <<'NODE'
           const fs = require('fs');
-          const current = JSON.parse(fs.readFileSync('version.json', 'utf8')).version;
-          const match = /^([0-9]+)\.([0-9]+)\.([0-9]+)$/.exec(current);
+          const file = 'version.json';
+          const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+          const match = /^([0-9]+)\.([0-9]+)\.([0-9]+)$/.exec(data.version || '');
           if (!match) throw new Error('version.json must contain a semantic version like 1.0.0');
+
           let [major, minor, patch] = match.slice(1).map(Number);
-          const labels = JSON.parse(process.env.PR_LABELS || '[]').map(x => String(x).toLowerCase());
-          if (labels.includes('major')) {
+          const message = process.env.COMMIT_MESSAGE || '';
+          let release = 'Bug fix / maintenance release';
+
+          if (/BREAKING CHANGE:|^[a-z]+\([^)]*\)!?:.*BREAKING CHANGE:/mi.test(message) ||
+              /^[a-z]+(?:\([^)]*\))?!:/.test(message)) {
             major += 1; minor = 0; patch = 0;
-          } else if (labels.includes('feature') || labels.includes('minor')) {
+            release = 'Major release';
+          } else if (/^feat(?:\([^)]*\))?:/m.test(message)) {
             minor += 1; patch = 0;
+            release = 'Feature release';
           } else {
             patch += 1;
           }
-          const next = `${major}.${minor}.${patch}`;
-          const data = JSON.parse(fs.readFileSync('version.json', 'utf8'));
-          data.version = next;
-          data.release = labels.includes('major') ? 'Major release' :
-            (labels.includes('feature') || labels.includes('minor') ? 'Feature release' : 'Bug fix release');
-          fs.writeFileSync('version.json', JSON.stringify(data, null, 2) + '\n');
-          fs.writeFileSync(process.env.GITHUB_OUTPUT, `version=${next}\n`, { flag: 'a' });
+
+          data.version = `${major}.${minor}.${patch}`;
+          data.release = release;
+          data.updatedAt = new Date().toISOString();
+          fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `version=${data.version}\n`);
           NODE
 
-      - name: Open version bump pull request
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: version-bump/${{ github.event.pull_request.number }}
-          delete-branch: true
-          commit-message: "chore: bump version to ${{ steps.version.outputs.version }}"
-          title: "chore: bump website version to ${{ steps.version.outputs.version }}"
-          body: |
-            Automated semantic version update after #${{ github.event.pull_request.number }} was merged.
-
-            Please review and merge this PR to publish the new website version.
-          base: main
+      - name: Commit version update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.json
+          git commit -m "chore: bump website version to ${{ steps.version.outputs.version }} [skip-version-bump]"
+          git push origin HEAD:main
