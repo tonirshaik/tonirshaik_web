@@ -58,7 +58,7 @@ jobs:
           commit-message: "chore: bump version to ${{ steps.version.outputs.version }}"
           title: "chore: bump website version to ${{ steps.version.outputs.version }}"
           body: |
-            Automated semantic version update after #${{ github.event.pull_request.number } was merged.
+            Automated semantic version update after #${{ github.event.pull_request.number }} was merged.
 
             Please review and merge this PR to publish the new website version.
           base: main
