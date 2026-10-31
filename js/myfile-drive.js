@@ -304,6 +304,19 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && mfSelMode 
 const _mfRender = mfRender;
 mfRender = function () {
   _mfRender();
+  document.querySelectorAll('#mfList .mf-item').forEach(item => {
+    const open = item.querySelector('.mf-open');
+    const pop = item.querySelector('.mf-pop');
+    const node = open && mfStorage && mfStorage.files[open.dataset.id];
+    if (node && node.directory && pop && !pop.querySelector('[data-act="folder-zip"]')) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.dataset.act = 'folder-zip';
+      btn.dataset.id = node.nodeId;
+      btn.innerHTML = '<i class="fas fa-file-zipper"></i> Download ZIP';
+      pop.insertBefore(btn, pop.firstChild);
+    }
+  });
   document.querySelectorAll('#mfList .mf-open').forEach(o => {
     if (!o.querySelector('.mf-chk')) o.insertAdjacentHTML('afterbegin', '<span class="mf-chk"><i class="fas fa-check"></i></span>');
   });
@@ -367,3 +380,128 @@ async function mfBulk(kind) {
     }
   } catch (e) { alert('Failed: ' + (e.message || e)); }
 }
+
+
+/* ---------- Folder ZIP download ---------- */
+let mfZipLibPromise = null;
+function mfLoadZipLib() {
+  if (window.JSZip) return Promise.resolve(window.JSZip);
+  if (!mfZipLibPromise) {
+    mfZipLibPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+      script.onload = () => window.JSZip ? resolve(window.JSZip) : reject(new Error('ZIP library load hoyni'));
+      script.onerror = () => { mfZipLibPromise = null; reject(new Error('ZIP library download kora jayni. Internet connection check korun.')); };
+      document.head.appendChild(script);
+    });
+  }
+  return mfZipLibPromise;
+}
+
+function mfZipProgressRow(folderName) {
+  const box = document.getElementById('mfUploads');
+  const row = document.createElement('div');
+  row.className = 'mf-up';
+  row.innerHTML = '<div class="mf-up-top"><span class="mf-up-name"></span><span class="mf-up-pct">Preparing...</span></div><div class="mf-bar-bg"><div class="mf-bar-fill"></div></div>';
+  row.querySelector('.mf-up-name').textContent = 'Zipping ' + folderName;
+  if (box) box.appendChild(row);
+  return {
+    row,
+    update(percent, label) {
+      row.querySelector('.mf-up-pct').textContent = label || Math.round(percent) + '%';
+      row.querySelector('.mf-bar-fill').style.width = Math.max(0, Math.min(100, percent)) + '%';
+    },
+    done() {
+      row.querySelector('.mf-up-pct').textContent = 'Downloaded';
+      row.querySelector('.mf-bar-fill').style.width = '100%';
+      row.classList.add('done');
+      setTimeout(() => row.remove(), 5000);
+    },
+    fail(error) {
+      row.querySelector('.mf-up-pct').textContent = 'Failed';
+      row.classList.add('fail');
+      row.title = error && error.message ? error.message : 'ZIP download failed';
+    }
+  };
+}
+
+async function mfDownloadFolderZip(folder) {
+  if (!folder || !folder.directory) return;
+  const status = mfZipProgressRow(folder.name || 'folder');
+  try {
+    const JSZip = await mfLoadZipLib();
+    let totalBytes = 0;
+    const countFiles = async node => {
+      if (typeof node.load === 'function') await node.load();
+      if (!node.directory) { totalBytes += Number(node.size) || 0; return; }
+      for (const child of (node.children || [])) await countFiles(child);
+    };
+    await countFiles(folder);
+    if (totalBytes > 500 * 1024 * 1024 &&
+        !confirm('This folder is ' + mfSize(totalBytes) + '. ZIP needs memory while downloading and may use significant RAM. Continue?')) {
+      status.row.remove();
+      return;
+    }
+
+    const zip = new JSZip();
+    let filesDone = 0;
+    const addFolder = async (node, path) => {
+      if (typeof node.load === 'function') await node.load();
+      const children = node.children || [];
+      if (!children.length) zip.folder(path);
+      for (const child of children) {
+        const safeName = String(child.name || 'unnamed').replace(/[\\/]/g, '_');
+        const childPath = path ? path + '/' + safeName : safeName;
+        if (child.directory) {
+          await addFolder(child, childPath);
+        } else {
+          const buffer = await child.downloadBuffer();
+          zip.file(childPath, buffer);
+          filesDone++;
+          status.update(totalBytes ? Math.min(75, (filesDone / Math.max(1, countFilesTotal)) * 75) : 10,
+            filesDone + ' file' + (filesDone === 1 ? '' : 's'));
+        }
+      }
+    };
+    let countFilesTotal = 0;
+    const countOnly = async node => {
+      if (typeof node.load === 'function') await node.load();
+      if (!node.directory) { countFilesTotal++; return; }
+      for (const child of (node.children || [])) await countOnly(child);
+    };
+    await countOnly(folder);
+    await addFolder(folder, String(folder.name || 'Folder').replace(/[\\/]/g, '_'));
+    status.update(80, 'Compressing...');
+    const blob = await zip.generateAsync(
+      { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 5 } },
+      meta => status.update(80 + meta.percent * 0.2, 'Compressing ' + Math.round(meta.percent) + '%')
+    );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (String(folder.name || 'folder').replace(/[\\/]/g, '_')) + '.zip';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    status.done();
+  } catch (error) {
+    status.fail(error);
+    alert('Folder ZIP download failed: ' + (error.message || error));
+  }
+}
+
+// Capture this action before the existing My File click handler handles other menu actions.
+document.addEventListener('click', event => {
+  const button = event.target.closest('[data-act="folder-zip"]');
+  if (!button) return;
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+  const node = mfStorage && mfStorage.files[button.dataset.id];
+  const pop = button.closest('.mf-pop');
+  if (pop) pop.classList.remove('show');
+  const list = document.getElementById('mfList');
+  if (list) list.style.paddingBottom = '';
+  if (node) mfDownloadFolderZip(node);
+}, true);
