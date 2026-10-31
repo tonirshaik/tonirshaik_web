@@ -263,6 +263,32 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/brands.min.css">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/myfile-drive.css">
+
+<style id="site-version-styles">
+  .site-version {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 7px;
+    padding: 3px 8px;
+    border: 1px solid rgba(239, 68, 68, .42);
+    border-radius: 6px;
+    color: #f87171;
+    background: rgba(239, 68, 68, .09);
+    font: 600 11px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: .04em;
+    cursor: help;
+  }
+  .site-version::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 7px currentColor;
+  }
+</style>
+
 </head>
 <body>
 
@@ -283,6 +309,7 @@
       <div>
         <div class="brand-name">Tonir Shaik</div>
         <div class="brand-role">IT Specialist</div>
+        <div class="site-version" id="siteVersion" title="Website version">v1.0.0</div>
       </div>
     </div>
 
@@ -846,6 +873,30 @@
     </div>
 
   </main>
+
+
+<script>
+  // The version is maintained by the GitHub Actions semantic-version workflow.
+  (function () {
+    const versionBadge = document.getElementById('siteVersion');
+    if (!versionBadge) return;
+    fetch('./version.json', { cache: 'no-store' })
+      .then(response => {
+        if (!response.ok) throw new Error('Version file unavailable');
+        return response.json();
+      })
+      .then(data => {
+        if (data && /^[0-9]+\.[0-9]+\.[0-9]+$/.test(data.version || '')) {
+          versionBadge.textContent = 'v' + data.version;
+          versionBadge.title = 'Website version ' + data.version;
+        }
+      })
+      .catch(() => {
+        versionBadge.textContent = 'v1.0.0';
+        versionBadge.title = 'Website version';
+      });
+  })();
+</script>
 
   <script src="js/main.js"></script>
   <script src="js/myfile-drive.js"></script>
