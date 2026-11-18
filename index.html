@@ -672,14 +672,34 @@
         </div>
 
         <div id="privMainMenu" class="sec-screen">
-          <div class="sec-icon">📂</div>
-          <h2 class="sec-title">Dashboard</h2>
+          <div class="sec-menu-header">
+            <div class="sec-icon">📂</div>
+            <h2 class="sec-title">Dashboard</h2>
+            <button class="sec-settings-btn" onclick="privOpenSettings()" title="Change links">
+              <i class="fas fa-gear"></i>
+            </button>
+          </div>
           <button class="sec-btn" onclick="privOpenLink('image')">
             <i class="fas fa-image"></i> Image
           </button>
           <button class="sec-btn" onclick="privOpenLink('private')">
             <i class="fas fa-lock"></i> Private
           </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-modal-overlay" id="privLinkModal">
+      <div class="sec-modal">
+        <h3>Link Settings</h3>
+        <label for="privNewImage">Image link</label>
+        <input type="text" id="privNewImage" placeholder="https://..." autocomplete="off">
+        <label for="privNewPrivate">Private link</label>
+        <input type="text" id="privNewPrivate" placeholder="https://..." autocomplete="off" onkeydown="if(event.key==='Enter') privSaveLinks()">
+        <div class="sec-error" id="privLinkError"></div>
+        <div class="sec-modal-actions">
+          <button class="sec-modal-cancel" onclick="privCloseSettings()">Cancel</button>
+          <button class="sec-modal-save" id="privLinkSaveBtn" onclick="privSaveLinks()">Save</button>
         </div>
       </div>
     </div>

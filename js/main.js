@@ -311,7 +311,83 @@ async function privOpenLink(key){
   }
 }
 
+async function privLoadLinks(force){
+  if(!privLinksCache || force){
+    const res = await fetch(`${API_BASE}/private-links?token=${encodeURIComponent(privToken)}`);
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    privLinksCache = data.links || {};
+  }
+  return privLinksCache;
+}
+
+async function privOpenSettings(){
+  document.getElementById('privLinkError').textContent = '';
+  try{
+    const l = await privLoadLinks(true);
+    document.getElementById('privNewImage').value = l.image || '';
+    document.getElementById('privNewPrivate').value = l.private || '';
+  }catch(e){
+    alert('Your session has expired, please log in again.');
+    privLogout();
+    return;
+  }
+  document.getElementById('privLinkModal').classList.add('active');
+}
+
+function privCloseSettings(){
+  const m = document.getElementById('privLinkModal');
+  if(m) m.classList.remove('active');
+}
+
+let privSaveInFlight = false;
+async function privSaveLinks(){
+  if(privSaveInFlight) return;
+  const errorEl = document.getElementById('privLinkError');
+  const btn = document.getElementById('privLinkSaveBtn');
+  const cur = privLinksCache || {};
+  const fields = [['image', 'privNewImage'], ['private', 'privNewPrivate']];
+  const changes = fields
+    .map(([k, id]) => [k, document.getElementById(id).value.trim()])
+    .filter(([k, v]) => v && v !== (cur[k] || ''));
+  if(!changes.length){ privCloseSettings(); return; }
+  for(const [, v] of changes){
+    try{
+      const u = new URL(v);
+      if(!['http:', 'https:'].includes(u.protocol)) throw new Error('bad');
+    }catch(_e){
+      errorEl.textContent = 'Link must be a valid URL (https://...)';
+      return;
+    }
+  }
+  privSaveInFlight = true;
+  const label = btn.textContent;
+  btn.textContent = 'Saving...';
+  btn.disabled = true;
+  try{
+    for(const [key, link] of changes){
+      const res = await fetch(`${API_BASE}/private-links/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: privToken, key, link })
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || 'Could not save the link');
+    }
+    privLinksCache = null;
+    errorEl.textContent = '';
+    privCloseSettings();
+  }catch(err){
+    errorEl.textContent = err.message || 'Something went wrong, please try again.';
+  }finally{
+    btn.textContent = label;
+    btn.disabled = false;
+    privSaveInFlight = false;
+  }
+}
+
 function privLogout(){
+  privCloseSettings();
   privToken = null;
   privLinksCache = null;
   document.getElementById('privPasswordField').value = "";
