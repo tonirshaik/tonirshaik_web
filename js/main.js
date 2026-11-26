@@ -873,6 +873,7 @@ function mfShowText(node, text){
   mfEditNode = node; mfEditText = text;
   document.getElementById('mfModalTitle').textContent = node.name || 'File';
   document.getElementById('mfModalActions').innerHTML =
+    `<button class="mf-mini" data-act="copy-text" title="Copy"><i class="fas fa-copy"></i></button>` +
     `<button class="mf-mini" data-act="edit" title="Edit"><i class="fas fa-pen-to-square"></i></button>` +
     `<button class="mf-mini" data-act="dl" data-id="${mfEsc(node.nodeId)}" title="Download"><i class="fas fa-download"></i></button>`;
   const body = document.getElementById('mfModalBody');
@@ -891,6 +892,12 @@ function mfLineNums(text){
   let s = '';
   for(let i = 1; i <= n; i++) s += i + (i < n ? '\n' : '');
   return s;
+}
+
+async function mfCopyText(){
+  if(!mfEditNode) return;
+  if(await mfClip(mfEditText)) mfToast('Text copied');
+  else mfToast('Could not copy');
 }
 
 function mfStartEdit(){
@@ -1152,6 +1159,7 @@ document.addEventListener('click', async (e) => {
     return;
   }
   if(act === 'close'){ mfClosePreview(); return; }
+  if(act === 'copy-text'){ mfCopyText(); return; }
   if(act === 'edit'){ mfStartEdit(); return; }
   if(act === 'save'){ mfSaveEdit(el); return; }
   if(act === 'cancel-edit'){ if(mfEditNode) mfShowText(mfEditNode, mfEditText); return; }
