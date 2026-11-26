@@ -1192,6 +1192,3 @@ main{ min-width:0; max-width:100%; }            /* lets flex child shrink to scr
   .mf-bar .mf-layout-wrap{ flex:0 0 auto; }
   .mf-menu{ right:auto; left:0; max-width:calc(100vw - 48px); }
 }
-
-/* Copy button in text viewer */
-.mf-mini[data-act="copy-text"]{ color:var(--gold); border-color:var(--gold); }
